@@ -58,6 +58,10 @@ export default function App() {
   const activeSearchController = useRef<AbortController | null>(null);
 
   useEffect(() => {
+    document.title = `GeoCompare v${__APP_VERSION__}`;
+  }, []);
+
+  useEffect(() => {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
   }, [config]);
 
