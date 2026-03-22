@@ -1,0 +1,18 @@
+geocompare.iandorsey.com {
+    encode gzip zstd
+
+    # Keep the first web deployment protected while the app is still evolving.
+    basicauth {
+        ian $2a$14$REPLACE_WITH_BCRYPT_HASH
+    }
+
+    handle /api/* {
+        reverse_proxy 127.0.0.1:8000
+    }
+
+    handle {
+        root * /var/www/geocompare-web
+        try_files {path} /index.html
+        file_server
+    }
+}
