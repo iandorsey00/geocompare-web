@@ -183,6 +183,15 @@ export class GeoCompareApi {
     return this.request<GeoResolveResult>(this.georesolveBaseUrl, "/resolve", { address }, "georesolve");
   }
 
+  georesolveCurrentLocation(latitude: number, longitude: number) {
+    return this.request<GeoResolveResult>(
+      this.georesolveBaseUrl,
+      "/resolve-current-location",
+      { latitude, longitude },
+      "georesolve",
+    );
+  }
+
   remoteness(params: RemotenessParams) {
     return this.request<RemotenessResponse>(this.baseUrl, "/remoteness", params, "remoteness");
   }

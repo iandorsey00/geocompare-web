@@ -83,6 +83,13 @@ function humanizeKind(kind: string) {
   }
 }
 
+function describeResolvedCount(result: GeoResolveResult) {
+  const resolvedItems = buildResolvedItems(result);
+  return resolvedItems.length > 0
+    ? `Resolved ${resolvedItems.length} geograph${resolvedItems.length === 1 ? "y" : "ies"}.`
+    : "GeoResolve returned coordinates, but no profile-ready geographies.";
+}
+
 function describeGeoResolveError(error: unknown) {
   const fallback = "GeoResolve is unavailable right now.";
   if (!(error instanceof Error)) {
@@ -94,6 +101,23 @@ function describeGeoResolveError(error: unknown) {
   }
 
   return error.message || fallback;
+}
+
+function describeLocationError(error: GeolocationPositionError | Error) {
+  if ("code" in error) {
+    switch (error.code) {
+      case error.PERMISSION_DENIED:
+        return "Location permission was denied.";
+      case error.POSITION_UNAVAILABLE:
+        return "Current location is unavailable right now.";
+      case error.TIMEOUT:
+        return "Current location took too long to resolve.";
+      default:
+        return "Unable to get your current location.";
+    }
+  }
+
+  return error.message || "Unable to get your current location.";
 }
 
 function candidateProfileNames(item: ResolvedItem, resolved: GeoResolveResult | null) {
@@ -132,6 +156,7 @@ export function GeoResolvePanel({
   const api = useMemo(() => new GeoCompareApi(config), [config]);
   const [query, setQuery] = useState("");
   const [isResolving, setIsResolving] = useState(false);
+  const [isResolvingCurrentLocation, setIsResolvingCurrentLocation] = useState(false);
   const [isLoadingProfile, setIsLoadingProfile] = useState(false);
   const [resolved, setResolved] = useState<GeoResolveResult | null>(null);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
@@ -140,6 +165,20 @@ export function GeoResolvePanel({
   const [statusText, setStatusText] = useState("");
 
   const items = buildResolvedItems(resolved);
+
+  function resetResolveState() {
+    setResolved(null);
+    setProfile(null);
+    setSelected(null);
+    setSelectedKey(null);
+  }
+
+  function handleResolveSuccess(response: GeoResolveResult) {
+    setResolved(response);
+    const message = describeResolvedCount(response);
+    setStatusText(message);
+    onFeedback(message);
+  }
 
   async function loadResolvedProfile(item: ResolvedItem) {
     setSelectedKey(item.key);
@@ -194,29 +233,58 @@ export function GeoResolvePanel({
   async function handleResolve(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setIsResolving(true);
-    setResolved(null);
-    setProfile(null);
-    setSelected(null);
-    setSelectedKey(null);
+    resetResolveState();
     setStatusText("Resolving address...");
     onFeedback("Resolving address...");
 
     try {
       const response = await api.georesolve(query);
-      setResolved(response);
-      const resolvedItems = buildResolvedItems(response);
-      const message =
-        resolvedItems.length > 0
-          ? `Resolved ${resolvedItems.length} geograph${resolvedItems.length === 1 ? "y" : "ies"} from that address.`
-          : "GeoResolve returned coordinates, but no profile-ready geographies.";
-      setStatusText(message);
-      onFeedback(message);
+      handleResolveSuccess(response);
     } catch (error) {
       const message = describeGeoResolveError(error);
       setStatusText(message);
       onFeedback(message);
     } finally {
       setIsResolving(false);
+    }
+  }
+
+  async function handleResolveCurrentLocation() {
+    if (!navigator.geolocation) {
+      const message = "This browser does not support current-location lookup.";
+      setStatusText(message);
+      onFeedback(message);
+      return;
+    }
+
+    setIsResolvingCurrentLocation(true);
+    resetResolveState();
+    setStatusText("Resolving current location...");
+    onFeedback("Resolving current location...");
+
+    try {
+      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: true,
+          timeout: 12_000,
+          maximumAge: 300_000,
+        });
+      });
+
+      const response = await api.georesolveCurrentLocation(
+        position.coords.latitude,
+        position.coords.longitude,
+      );
+      handleResolveSuccess(response);
+    } catch (error) {
+      const message =
+        error instanceof Error && !("code" in error)
+          ? describeGeoResolveError(error)
+          : describeLocationError(error as GeolocationPositionError | Error);
+      setStatusText(message);
+      onFeedback(message);
+    } finally {
+      setIsResolvingCurrentLocation(false);
     }
   }
 
@@ -255,7 +323,21 @@ export function GeoResolvePanel({
               ) : null}
             </div>
           </label>
-          <button className="primary-button search-submit search-submit-inline" disabled={isResolving || !query.trim()} type="submit">
+          <button
+            className="text-link search-advanced-toggle"
+            onClick={() => {
+              void handleResolveCurrentLocation();
+            }}
+            disabled={isResolving || isResolvingCurrentLocation}
+            type="button"
+          >
+            {isResolvingCurrentLocation ? "Locating..." : "Use current location"}
+          </button>
+          <button
+            className="primary-button search-submit search-submit-inline"
+            disabled={isResolving || isResolvingCurrentLocation || !query.trim()}
+            type="submit"
+          >
             {isResolving ? "Resolving..." : "Resolve"}
           </button>
         </form>
@@ -265,7 +347,7 @@ export function GeoResolvePanel({
         <SectionCard
           eyebrow=""
           title="Resolved geographies"
-          subtitle={resolved.matched_address}
+          subtitle={resolved.matched_address ?? "Current location"}
         >
           <div className="resolve-summary">
             <p>
@@ -330,10 +412,7 @@ export function GeoResolvePanel({
               setSelected(null);
               setProfile(null);
               if (resolved) {
-                const resolvedItems = buildResolvedItems(resolved);
-                setStatusText(
-                  `Resolved ${resolvedItems.length} geograph${resolvedItems.length === 1 ? "y" : "ies"} from that address.`,
-                );
+                setStatusText(describeResolvedCount(resolved));
               }
             }}
             type="button"

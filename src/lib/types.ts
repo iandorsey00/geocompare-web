@@ -83,9 +83,13 @@ export type GeoResolveGeography = {
 
 export type GeoResolveResult = {
   input: {
-    address: string;
+    address?: string;
+    coordinates?: {
+      latitude: number;
+      longitude: number;
+    };
   };
-  matched_address: string;
+  matched_address: string | null;
   coordinates: {
     latitude: number;
     longitude: number;
