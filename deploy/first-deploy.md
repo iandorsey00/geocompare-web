@@ -41,7 +41,7 @@ For the current VPS workflow, the most practical entrypoint is:
 npm run deploy:stack
 ```
 
-That script is in [deploy-stack.sh](/Users/iandorsey/dev/geocompare-web/deploy/deploy-stack.sh).
+That script is in `deploy/deploy-stack.sh`.
 
 Examples:
 
@@ -131,6 +131,7 @@ Then test in the UI:
 - nearest
 - GeoResolve
 - map display
+- footer `Sources` link
 
 ## 6. Rollback
 

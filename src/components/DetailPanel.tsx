@@ -120,6 +120,14 @@ const PROFILE_SECTIONS: ProfileSection[] = [
     ],
   },
   {
+    title: "Crime",
+    rows: [
+      { key: "property_crime_count", label: "Property crimes (NIBRS 2024)", pctKey: "property_crime_rate" },
+      { key: "total_crime_count", label: "Total crimes (NIBRS 2024)", pctKey: "total_crime_rate" },
+      { key: "violent_crime_count", label: "Violent crimes (NIBRS 2024)", pctKey: "violent_crime_rate" },
+    ],
+  },
+  {
     title: "Voter registration",
     rows: [
       { key: "registered_voters", label: "Registered voters", pctKey: "registered_voters_pct" },

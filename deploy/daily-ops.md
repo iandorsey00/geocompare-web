@@ -4,7 +4,7 @@ Short command reference for the current GeoCompare stack.
 
 ## Frontend only
 
-From [/Users/iandorsey/dev/geocompare-web](/Users/iandorsey/dev/geocompare-web):
+From the `geocompare-web` repo:
 
 ```bash
 npm run deploy:droplet
@@ -19,7 +19,7 @@ export REMOTE_USER=your-ssh-user
 
 ## Full stack code deploy
 
-From [/Users/iandorsey/dev/geocompare-web](/Users/iandorsey/dev/geocompare-web):
+From the `geocompare-web` repo:
 
 ```bash
 npm run deploy:stack
@@ -27,7 +27,7 @@ npm run deploy:stack
 
 ## Full stack code deploy plus SQLite swap
 
-From [/Users/iandorsey/dev/geocompare-web](/Users/iandorsey/dev/geocompare-web):
+From the `geocompare-web` repo:
 
 ```bash
 npm run deploy:stack -- --with-sqlite
@@ -35,7 +35,7 @@ npm run deploy:stack -- --with-sqlite
 
 ## GeoCompare backend only
 
-From [/Users/iandorsey/dev/geocompare-web](/Users/iandorsey/dev/geocompare-web):
+From the `geocompare-web` repo:
 
 ```bash
 npm run deploy:stack -- --backend-only
@@ -43,7 +43,7 @@ npm run deploy:stack -- --backend-only
 
 ## GeoResolve only
 
-From [/Users/iandorsey/dev/geocompare-web](/Users/iandorsey/dev/geocompare-web):
+From the `geocompare-web` repo:
 
 ```bash
 npm run deploy:stack -- --georesolve-only
@@ -60,7 +60,7 @@ geocompare build SOURCE_DATA_PATH
 
 ## Upload rebuilt SQLite only
 
-From [/Users/iandorsey/dev/geocompare-web](/Users/iandorsey/dev/geocompare-web):
+From the `geocompare-web` repo:
 
 ```bash
 npm run deploy:stack -- --sqlite-only

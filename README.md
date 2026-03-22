@@ -11,6 +11,7 @@ Web frontend for exploring GeoCompare and GeoResolve.
 - run nearest-geography queries
 - resolve street addresses through GeoResolve
 - show boundaries on a map for supported geographies
+- show built-in data sources through the app footer
 
 The frontend treats both backends as external services:
 
@@ -111,7 +112,7 @@ export REMOTE_USER=your-ssh-user
 npm run deploy:stack
 ```
 
-This script lives in [deploy-stack.sh](/Users/iandorsey/dev/geocompare-web/deploy/deploy-stack.sh) and is intended as an operator-facing entrypoint for the current VPS setup.
+This script lives in `deploy/deploy-stack.sh` and is intended as an operator-facing entrypoint for the current VPS setup.
 
 It can:
 
@@ -148,14 +149,15 @@ Current recommended shape:
 
 See:
 
-- [first-deploy.md](/Users/iandorsey/dev/geocompare-web/deploy/first-deploy.md)
-- [daily-ops.md](/Users/iandorsey/dev/geocompare-web/deploy/daily-ops.md)
+- `deploy/first-deploy.md`
+- `deploy/daily-ops.md`
 
 ## Notes
 
 - Search hides census tracts by default, but users can opt in.
 - GeoResolve profile opening is GEOID-first.
 - Compare currently stays table-first; maps are shown on single-profile views only.
+- The footer `Sources` link shows the built-in GeoCompare source list from the backend.
 - The current bundle is larger than ideal because of map support and static option data. Lazy loading would be a good future cleanup.
 
 ## Security note

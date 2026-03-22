@@ -11,6 +11,7 @@ import type {
   ResolveResponse,
   SearchParams,
   SearchResponse,
+  SourcesResponse,
 } from "./types";
 
 type Primitive = string | number | boolean | undefined;
@@ -24,7 +25,8 @@ type RequestTimeoutName =
   | "top"
   | "bottom"
   | "nearest"
-  | "georesolve";
+  | "georesolve"
+  | "sources";
 
 const REQUEST_TIMEOUT_MS: Record<RequestTimeoutName, number> = {
   health: 10_000,
@@ -37,6 +39,7 @@ const REQUEST_TIMEOUT_MS: Record<RequestTimeoutName, number> = {
   bottom: 20_000,
   nearest: 20_000,
   georesolve: 20_000,
+  sources: 10_000,
 };
 
 function withTrailingSlashRemoved(value: string) {
@@ -205,5 +208,9 @@ export class GeoCompareApi {
     kilometers?: boolean;
   }) {
     return this.request<NearestResponse>(this.baseUrl, "/nearest", params, "nearest");
+  }
+
+  sources() {
+    return this.request<SourcesResponse>(this.baseUrl, "/sources", {}, "sources");
   }
 }

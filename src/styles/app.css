@@ -53,6 +53,12 @@ button {
   gap: 24px;
 }
 
+.app-footer {
+  display: flex;
+  justify-content: center;
+  padding: 8px 0 24px;
+}
+
 .minimal-header {
   display: grid;
   gap: 8px;
@@ -448,6 +454,50 @@ tbody tr.selected {
   gap: 10px;
 }
 
+.sources-panel {
+  display: grid;
+  gap: 16px;
+  padding-top: 8px;
+}
+
+.sources-list {
+  display: grid;
+  gap: 18px;
+}
+
+.source-row {
+  display: grid;
+  gap: 6px;
+  padding: 0 0 16px;
+  border-bottom: 1px solid rgba(22, 24, 28, 0.08);
+}
+
+.source-heading {
+  display: grid;
+  gap: 2px;
+}
+
+.source-heading h3,
+.source-heading p,
+.source-provider,
+.source-notes {
+  margin: 0;
+}
+
+.source-heading h3 {
+  font-size: 1rem;
+}
+
+.source-heading p,
+.source-notes {
+  color: var(--muted);
+}
+
+.source-provider {
+  color: var(--ink);
+  font-weight: 500;
+}
+
 .ranking-results {
   display: grid;
   gap: 12px;
@@ -591,7 +641,7 @@ tbody tr.selected {
 
 .metric-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(90px, auto) minmax(64px, auto);
+  grid-template-columns: minmax(0, 1fr) minmax(110px, 140px) minmax(110px, 140px);
   column-gap: 16px;
   align-items: center;
   padding: 10px 12px;
@@ -614,14 +664,18 @@ tbody tr.selected {
 
 .metric-main {
   text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 
 .metric-pct {
   display: inline-block;
-  min-width: 64px;
+  min-width: 110px;
   text-align: right;
   color: var(--muted);
   font-weight: 500;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 
 .profile-text-row {

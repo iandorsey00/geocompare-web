@@ -37,6 +37,16 @@ export function formatMetricValue(key: string, value: number | string | null | u
       }).format(pctValue)}%`;
     }
 
+    if (
+      key === "violent_crime_rate" ||
+      key === "property_crime_rate" ||
+      key === "total_crime_rate"
+    ) {
+      return `${new Intl.NumberFormat("en-US", {
+        maximumFractionDigits: Math.abs(value) >= 100 ? 1 : 2,
+      }).format(value)}/100k`;
+    }
+
     if (key === "population_density") {
       return `${new Intl.NumberFormat("en-US", {
         maximumFractionDigits: Math.abs(value) >= 100 ? 0 : 1,
@@ -58,6 +68,23 @@ export function formatMetricValue(key: string, value: number | string | null | u
       return `${new Intl.NumberFormat("en-US", {
         maximumFractionDigits: pctValue >= 10 ? 1 : 2,
       }).format(pctValue)}%`;
+    }
+  }
+
+  if (
+    typeof value === "string" &&
+    (key === "violent_crime_rate" || key === "property_crime_rate" || key === "total_crime_rate")
+  ) {
+    const trimmed = value.trim();
+    if (trimmed.endsWith("/100k")) {
+      return trimmed;
+    }
+
+    const parsed = Number(trimmed.replace(/,/g, ""));
+    if (Number.isFinite(parsed)) {
+      return `${new Intl.NumberFormat("en-US", {
+        maximumFractionDigits: Math.abs(parsed) >= 100 ? 1 : 2,
+      }).format(parsed)}/100k`;
     }
   }
 

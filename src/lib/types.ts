@@ -60,6 +60,19 @@ export type ResolveResponse = {
   results: string[];
 };
 
+export type SourceRow = {
+  key: string;
+  name: string;
+  used_for: string;
+  provider: string;
+  notes: string;
+};
+
+export type SourcesResponse = {
+  count: number;
+  results: SourceRow[];
+};
+
 export type GeoResolveGeography = {
   kind: string;
   name: string | null;

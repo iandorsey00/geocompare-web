@@ -14,6 +14,7 @@ import type {
   NearestRow,
   SearchSelection,
   SelectedRow,
+  SourceRow,
 } from "./lib/types";
 
 const STORAGE_KEY = "geocompare-web-config";
@@ -50,6 +51,9 @@ export default function App() {
   const [nearestRows, setNearestRows] = useState<NearestRow[]>([]);
   const [isLoadingNearest, setIsLoadingNearest] = useState(false);
   const [nearestStatus, setNearestStatus] = useState("");
+  const [sourceRows, setSourceRows] = useState<SourceRow[]>([]);
+  const [isLoadingSources, setIsLoadingSources] = useState(false);
+  const [showSources, setShowSources] = useState(false);
   const [feedback, setFeedback] = useState(
     DEFAULT_FEEDBACK,
   );
@@ -250,6 +254,28 @@ export default function App() {
     }
   }
 
+  async function handleToggleSources() {
+    if (showSources) {
+      setShowSources(false);
+      return;
+    }
+
+    setShowSources(true);
+    if (sourceRows.length > 0 || isLoadingSources) {
+      return;
+    }
+
+    setIsLoadingSources(true);
+    try {
+      const response = await api.sources();
+      setSourceRows(response.results);
+    } catch (error) {
+      setFeedback(error instanceof Error ? error.message : "Sources request failed.");
+    } finally {
+      setIsLoadingSources(false);
+    }
+  }
+
   return (
     <div className="app-shell">
       <main className="minimal-shell">
@@ -412,6 +438,42 @@ export default function App() {
             ) : null}
           </div>
         ) : null}
+
+        {showSources ? (
+          <section className="sources-panel">
+            <div className="panel-header">
+              <div>
+                <p className="eyebrow">References</p>
+                <h2>Sources</h2>
+                <p className="panel-subtitle">
+                  Built-in data sources currently used by GeoCompare.
+                </p>
+              </div>
+            </div>
+            {isLoadingSources ? (
+              <div className="plain-state"><p>Loading sources...</p></div>
+            ) : (
+              <div className="sources-list">
+                {sourceRows.map((row) => (
+                  <article className="source-row" key={row.key}>
+                    <div className="source-heading">
+                      <h3>{row.name}</h3>
+                      <p>{row.used_for}</p>
+                    </div>
+                    <p className="source-provider">{row.provider}</p>
+                    <p className="source-notes">{row.notes}</p>
+                  </article>
+                ))}
+              </div>
+            )}
+          </section>
+        ) : null}
+
+        <footer className="app-footer">
+          <button className="text-link" onClick={() => void handleToggleSources()} type="button">
+            {showSources ? "Hide sources" : "Sources"}
+          </button>
+        </footer>
       </main>
     </div>
   );
