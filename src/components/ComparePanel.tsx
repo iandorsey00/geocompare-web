@@ -1,13 +1,10 @@
-import type { ReactNode } from "react";
 import { formatMetricValue } from "../lib/format";
-import type { GeographyProfile, SelectedRow } from "../lib/types";
-import { SectionCard } from "./SectionCard";
+import type { GeographyProfile } from "../lib/types";
 
-type DetailPanelProps = {
-  selected: SelectedRow | null;
-  profile: GeographyProfile | null;
-  isLoading: boolean;
-  actions?: ReactNode;
+type ComparePanelProps = {
+  profiles: GeographyProfile[];
+  onBack: () => void;
+  onRemove: (profile: GeographyProfile) => void;
 };
 
 type ProfileRow = {
@@ -23,10 +20,7 @@ type ProfileSection = {
 };
 
 const PROFILE_SECTIONS: ProfileSection[] = [
-  {
-    title: "Geography",
-    rows: [{ key: "land_area", label: "Land area" }],
-  },
+  { title: "Geography", rows: [{ key: "land_area", label: "Land area" }] },
   {
     title: "Population",
     rows: [
@@ -92,11 +86,7 @@ const PROFILE_SECTIONS: ProfileSection[] = [
   {
     title: "Economy",
     rows: [
-      {
-        key: "population_below_poverty_level",
-        label: "Population below poverty level",
-        pctKey: "poverty_rate_pct",
-      },
+      { key: "population_below_poverty_level", label: "Population below poverty level", pctKey: "poverty_rate_pct" },
       { key: "unemployed_population", label: "Unemployed population", pctKey: "unemployment_rate_pct" },
     ],
   },
@@ -133,16 +123,13 @@ function parseNumericMetric(value: number | string | null | undefined) {
   if (value === null || value === undefined) {
     return undefined;
   }
-
   if (typeof value === "number") {
     return Number.isFinite(value) ? value : undefined;
   }
-
   const normalized = value.replace(/[$,%]/g, "").replace(/,/g, "").replace(/\/sqmi/g, "").trim();
   if (!normalized) {
     return undefined;
   }
-
   const parsed = Number(normalized);
   return Number.isFinite(parsed) ? parsed : undefined;
 }
@@ -150,7 +137,6 @@ function parseNumericMetric(value: number | string | null | undefined) {
 function derivePercent(profile: GeographyProfile, key: string) {
   const metrics = profile.metrics;
   const numerator = parseNumericMetric(metrics[key]);
-
   const denominators: Record<string, string> = {
     under_18: "population",
     population_18_to_64: "population",
@@ -169,91 +155,113 @@ function derivePercent(profile: GeographyProfile, key: string) {
     homeowner_occupied_housing_units: "occupied_housing_units",
     registered_voters: "population",
   };
-
-  const denominatorKey = denominators[key];
-  const denominator = denominatorKey ? parseNumericMetric(metrics[denominatorKey]) : undefined;
-
+  const denominator = denominators[key] ? parseNumericMetric(metrics[denominators[key]]) : undefined;
   if (typeof numerator === "number" && typeof denominator === "number" && denominator > 0) {
     return (numerator / denominator) * 100;
   }
-
   return undefined;
 }
 
 function getPercentValue(profile: GeographyProfile, row: ProfileRow) {
-  if (!row.pctKey) {
+  if (!row.pctKey || row.key.startsWith("__text_")) {
     return undefined;
   }
-
-  const explicit = profile.metrics[row.pctKey];
-  if (typeof explicit !== "undefined") {
-    return explicit;
-  }
-
-  return derivePercent(profile, row.key);
+  return typeof profile.metrics[row.pctKey] !== "undefined"
+    ? profile.metrics[row.pctKey]
+    : derivePercent(profile, row.key);
 }
 
-function renderMetricRow(profile: GeographyProfile, row: ProfileRow) {
-  if (row.key.startsWith("__text_")) {
-    return (
-      <div className="profile-text-row" key={row.key}>
-        {row.label}
+export function ComparePanel({ profiles, onBack, onRemove }: ComparePanelProps) {
+  if (profiles.length === 0) {
+    return null;
+  }
+
+  function getCountyLabel(profile: GeographyProfile) {
+    if (profile.counties_display.length > 0) {
+      return profile.counties_display.join(", ");
+    }
+    if (profile.counties.length > 0) {
+      return profile.counties.join(", ");
+    }
+    return "";
+  }
+
+  return (
+    <div className="compare-view">
+      <button className="text-link back-link" onClick={onBack} type="button">
+        Back to results
+      </button>
+      <div className="compare-topbar">
+        <table className="compare-table compare-head-table">
+          <tbody>
+            <tr>
+              <th className="compare-label compare-top-label" scope="row">
+                Geography
+              </th>
+              {profiles.map((profile) => (
+                <td className="compare-name-cell" key={profile.geoid ?? profile.name}>
+                  <div className="compare-name">{profile.name}</div>
+                  {getCountyLabel(profile) ? (
+                    <div className="compare-subname">{getCountyLabel(profile)}</div>
+                  ) : null}
+                  <button className="text-link" onClick={() => onRemove(profile)} type="button">
+                    Remove
+                  </button>
+                </td>
+              ))}
+            </tr>
+          </tbody>
+        </table>
       </div>
-    );
-  }
+      <div className="compare-sections">
+        {PROFILE_SECTIONS.map((section) => (
+          <section className="metrics-section" key={section.title}>
+            <p className="section-label">{section.title}</p>
+            <div className="compare-table-wrap">
+              <table className="compare-table">
+                <tbody>
+                  {section.rows.map((row) => {
+                    if (row.key.startsWith("__text_")) {
+                      return (
+                        <tr key={row.key}>
+                          <td className="compare-text-row" colSpan={profiles.length + 1}>
+                            {row.label}
+                          </td>
+                        </tr>
+                      );
+                    }
 
-  const value = profile.metrics[row.key];
-  if (typeof value === "undefined") {
-    return null;
-  }
+                    const anyValue = profiles.some((profile) => typeof profile.metrics[row.key] !== "undefined");
+                    if (!anyValue) {
+                      return null;
+                    }
 
-  const pctValue = getPercentValue(profile, row);
-  const indentClass = row.indent === 2 ? "indent-2" : row.indent === 1 ? "indent-1" : "";
-
-  return (
-    <div className={`metric-row ${indentClass}`.trim()} key={row.key}>
-      <span className="metric-label">{row.label}</span>
-      <strong className="metric-main">{formatMetricValue(row.key, value)}</strong>
-      <span className="metric-pct">
-        {typeof pctValue !== "undefined" ? formatMetricValue(row.pctKey ?? `${row.key}_pct`, pctValue) : ""}
-      </span>
+                    return (
+                      <tr key={row.key}>
+                        <td className={`compare-label indent-${row.indent ?? 0}`.trim()}>{row.label}</td>
+                        {profiles.map((profile) => {
+                          const value = profile.metrics[row.key];
+                          const pctValue = getPercentValue(profile, row);
+                          return (
+                            <td className="compare-value-cell" key={`${profile.geoid ?? profile.name}-${row.key}`}>
+                              <span className="compare-main">{formatMetricValue(row.key, value)}</span>
+                              <span className="compare-pct">
+                                {typeof pctValue !== "undefined"
+                                  ? formatMetricValue(row.pctKey ?? `${row.key}_pct`, pctValue)
+                                  : ""}
+                              </span>
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        ))}
+      </div>
     </div>
-  );
-}
-
-export function DetailPanel({ selected, profile, isLoading, actions }: DetailPanelProps) {
-  if (!selected && !profile && !isLoading) {
-    return null;
-  }
-
-  return (
-    <SectionCard eyebrow="" title="" subtitle="">
-      {isLoading ? <div className="plain-state"><p>Loading profile...</p></div> : null}
-      {!isLoading && !profile ? <div className="plain-state"><p>Profile unavailable.</p></div> : null}
-      {!isLoading && profile && selected ? (
-        <div className="detail-stack">
-          <div className="profile-header-block">
-            <h3>{profile.name}</h3>
-            <p className="profile-subhead">
-              {profile.counties_display.join(", ") || profile.canonical_name}
-            </p>
-            {actions ? <div className="profile-actions">{actions}</div> : null}
-          </div>
-          {PROFILE_SECTIONS.map((section) => {
-            const rows = section.rows.map((row) => renderMetricRow(profile, row)).filter(Boolean);
-            if (rows.length === 0) {
-              return null;
-            }
-
-            return (
-              <section className="metrics-section" key={section.title}>
-                <p className="section-label">{section.title}</p>
-                <div className="metrics-list compact-metrics">{rows}</div>
-              </section>
-            );
-          })}
-        </div>
-      ) : null}
-    </SectionCard>
   );
 }

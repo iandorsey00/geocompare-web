@@ -25,6 +25,34 @@ export type SearchResponse = {
   results: GeographySummary[];
 };
 
+export type RankingRow = {
+  geography: GeographySummary;
+  metric_label: string;
+  metric_value: number | string | null;
+};
+
+export type RankingResponse = {
+  data_identifier: string;
+  metric_label: string;
+  scope: string;
+  count: number;
+  results: RankingRow[];
+};
+
+export type NearestRow = {
+  geography: GeographySummary;
+  distance_miles: number;
+  distance: number;
+  distance_unit: string;
+};
+
+export type NearestResponse = {
+  query: string;
+  scope: string;
+  count: number;
+  results: NearestRow[];
+};
+
 export type ResolveResponse = {
   query: string;
   count: number;

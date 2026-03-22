@@ -12,6 +12,58 @@ export function formatNumber(value: number | string | null | undefined) {
   return value;
 }
 
+export function formatMetricValue(key: string, value: number | string | null | undefined) {
+  if (value === null || value === undefined || value === "") {
+    return "—";
+  }
+
+  if (typeof value === "number") {
+    if (
+      key.includes("income") ||
+      key === "median_rent" ||
+      key === "median_value"
+    ) {
+      return new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: "USD",
+        maximumFractionDigits: 0,
+      }).format(value);
+    }
+
+    if (key.endsWith("_pct")) {
+      const pctValue = value <= 1 ? value * 100 : value;
+      return `${new Intl.NumberFormat("en-US", {
+        maximumFractionDigits: pctValue >= 10 ? 1 : 2,
+      }).format(pctValue)}%`;
+    }
+
+    if (key === "population_density") {
+      return `${new Intl.NumberFormat("en-US", {
+        maximumFractionDigits: Math.abs(value) >= 100 ? 0 : 1,
+      }).format(value)}/sqmi`;
+    }
+
+    return formatNumber(value);
+  }
+
+  if (typeof value === "string" && key.endsWith("_pct")) {
+    const trimmed = value.trim();
+    if (trimmed.endsWith("%")) {
+      return trimmed;
+    }
+
+    const parsed = Number(trimmed.replace(/,/g, ""));
+    if (Number.isFinite(parsed)) {
+      const pctValue = parsed <= 1 ? parsed * 100 : parsed;
+      return `${new Intl.NumberFormat("en-US", {
+        maximumFractionDigits: pctValue >= 10 ? 1 : 2,
+      }).format(pctValue)}%`;
+    }
+  }
+
+  return value;
+}
+
 export function formatMetricKey(value: string) {
   return value
     .replace(/_/g, " ")

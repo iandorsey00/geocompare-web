@@ -3,6 +3,8 @@ import type {
   GeographyProfile,
   LocalAverageParams,
   LocalAverageResponse,
+  NearestResponse,
+  RankingResponse,
   RemotenessParams,
   RemotenessResponse,
   ResolveResponse,
@@ -54,13 +56,22 @@ export class GeoCompareApi {
     });
 
     if (!response.ok) {
-      const maybeJson = await response
-        .json()
-        .catch(async () => ({ detail: await response.text() }));
-      const detail =
-        typeof maybeJson?.detail === "string"
-          ? maybeJson.detail
-          : `Request failed with status ${response.status}`;
+      const rawBody = await response.text();
+      let detail = `Request failed with status ${response.status}`;
+
+      if (rawBody.trim()) {
+        try {
+          const maybeJson = JSON.parse(rawBody);
+          if (typeof maybeJson?.detail === "string" && maybeJson.detail.trim()) {
+            detail = maybeJson.detail;
+          } else {
+            detail = rawBody;
+          }
+        } catch {
+          detail = rawBody;
+        }
+      }
+
       throw new Error(detail);
     }
 
@@ -92,5 +103,24 @@ export class GeoCompareApi {
 
   localAverage(params: LocalAverageParams) {
     return this.request<LocalAverageResponse>("/local-average", params);
+  }
+
+  top(params: { data_identifier: string; scope: string; where?: string; n: number; official_labels?: boolean }) {
+    return this.request<RankingResponse>("/top", params);
+  }
+
+  bottom(params: { data_identifier: string; scope: string; where?: string; n: number; official_labels?: boolean }) {
+    return this.request<RankingResponse>("/bottom", params);
+  }
+
+  nearest(params: {
+    name: string;
+    scope?: string;
+    where?: string;
+    n?: number;
+    official_labels?: boolean;
+    kilometers?: boolean;
+  }) {
+    return this.request<NearestResponse>("/nearest", params);
   }
 }

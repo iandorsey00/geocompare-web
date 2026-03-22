@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { ApiSettingsPanel } from "./components/ApiSettingsPanel";
+import { ComparePanel } from "./components/ComparePanel";
 import { DetailPanel } from "./components/DetailPanel";
+import { NearestPanel } from "./components/NearestPanel";
 import { ResultsTable } from "./components/ResultsTable";
 import { SearchPanel } from "./components/SearchPanel";
 import { TopBottomPanel } from "./components/TopBottomPanel";
@@ -9,7 +10,9 @@ import type {
   ApiConfig,
   GeographyProfile,
   GeographySummary,
+  NearestRow,
   SearchParams,
+  SearchSelection,
   SelectedRow,
 } from "./lib/types";
 
@@ -21,21 +24,10 @@ const defaultConfig: ApiConfig = {
   password: import.meta.env.VITE_GEOCOMPARE_AUTH_PASSWORD ?? "",
 };
 
-function selectedName(selected: SelectedRow | null) {
-  if (!selected) {
-    return null;
-  }
-
-  if (selected.kind === "search") {
-    return selected.item.name;
-  }
-
-  return selected.item.candidate.name;
-}
-
 export default function App() {
-  const [surface, setSurface] = useState<"search" | "top" | "bottom">("search");
-  const [config, setConfig] = useState<ApiConfig>(() => {
+  const [surface, setSurface] = useState<"search" | "ranking">("search");
+  const [searchView, setSearchView] = useState<"results" | "profile" | "compare">("results");
+  const [config] = useState<ApiConfig>(() => {
     const stored = window.localStorage.getItem(STORAGE_KEY);
     if (!stored) {
       return defaultConfig;
@@ -47,15 +39,15 @@ export default function App() {
       return defaultConfig;
     }
   });
-  const [healthStatus, setHealthStatus] = useState(
-    "Use /api with the Vite proxy for local development, or enter a direct URL plus credentials if CORS is enabled.",
-  );
-  const [isCheckingHealth, setIsCheckingHealth] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [isLoadingProfile, setIsLoadingProfile] = useState(false);
   const [searchRows, setSearchRows] = useState<GeographySummary[]>([]);
   const [selected, setSelected] = useState<SelectedRow | null>(null);
   const [profile, setProfile] = useState<GeographyProfile | null>(null);
+  const [compareProfiles, setCompareProfiles] = useState<GeographyProfile[]>([]);
+  const [nearestRows, setNearestRows] = useState<NearestRow[]>([]);
+  const [isLoadingNearest, setIsLoadingNearest] = useState(false);
+  const [nearestStatus, setNearestStatus] = useState("");
   const [feedback, setFeedback] = useState(
     "Search for a geography, or switch into a ranking mode.",
   );
@@ -66,29 +58,111 @@ export default function App() {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
   }, [config]);
 
-  async function loadProfile(name: string) {
+  async function loadProfileForSelection(selection: SearchSelection) {
+    const attempts = [
+      selection.item.display_name,
+      selection.item.name,
+      selection.item.canonical_name,
+    ].filter((value, index, items) => Boolean(value) && items.indexOf(value) === index);
+
     setIsLoadingProfile(true);
-    try {
-      const nextProfile = await api.profile(name, true);
-      setProfile(nextProfile);
-    } catch (error) {
-      setProfile(null);
-      setFeedback(error instanceof Error ? error.message : "Profile request failed.");
-    } finally {
-      setIsLoadingProfile(false);
+    setProfile(null);
+
+    for (const attempt of attempts) {
+      try {
+        const nextProfile = await api.profile(attempt, true);
+        setProfile(nextProfile);
+        setFeedback(`Opened ${nextProfile.name}.`);
+        setIsLoadingProfile(false);
+        return;
+      } catch {
+        continue;
+      }
     }
+
+    setIsLoadingProfile(false);
+    setFeedback("Profile unavailable.");
   }
 
-  async function handleCheckHealth() {
-    setIsCheckingHealth(true);
-    try {
-      const response = await api.health();
-      setHealthStatus(`Connected. Repository: ${response.repository}.`);
-    } catch (error) {
-      setHealthStatus(error instanceof Error ? error.message : "Health check failed.");
-    } finally {
-      setIsCheckingHealth(false);
+  async function loadProfileForSummary(summary: GeographySummary) {
+    const attempts = [summary.display_name, summary.name, summary.canonical_name].filter(
+      (value, index, items) => Boolean(value) && items.indexOf(value) === index,
+    );
+
+    for (const attempt of attempts) {
+      try {
+        return await api.profile(attempt, true);
+      } catch {
+        continue;
+      }
     }
+
+    return null;
+  }
+
+  async function handleAddCompare(summary: GeographySummary) {
+    if (summary.geoid && compareProfiles.some((profileItem) => profileItem.geoid === summary.geoid)) {
+      return;
+    }
+
+    const nextProfile = await loadProfileForSummary(summary);
+    if (!nextProfile) {
+      setFeedback(`Unable to add ${summary.name} to compare.`);
+      return;
+    }
+
+    setCompareProfiles((current) => [...current, nextProfile]);
+    setFeedback(`Added ${nextProfile.name} to compare.`);
+  }
+
+  function handleAddCompareProfile(nextProfile: GeographyProfile) {
+    if (nextProfile.geoid && compareProfiles.some((profileItem) => profileItem.geoid === nextProfile.geoid)) {
+      return;
+    }
+
+    setCompareProfiles((current) => [...current, nextProfile]);
+    setFeedback(`Added ${nextProfile.name} to compare.`);
+  }
+
+  function openProfileFromCompare(nextProfile: GeographyProfile) {
+    setSelected({
+      kind: "search",
+      item: {
+        name: nextProfile.name,
+        display_name: nextProfile.display_name,
+        canonical_name: nextProfile.canonical_name,
+        sumlevel: nextProfile.sumlevel,
+        state: nextProfile.state,
+        geoid: nextProfile.geoid,
+        counties: nextProfile.counties,
+        counties_display: nextProfile.counties_display,
+      },
+    });
+    setProfile(nextProfile);
+    setSearchView("profile");
+    setCompareProfiles([]);
+    setFeedback(`Opened ${nextProfile.name}.`);
+  }
+
+  function handleRemoveCompare(profileToRemove: GeographyProfile) {
+    const remainingProfiles = compareProfiles.filter(
+      (profileItem) => profileItem.geoid !== profileToRemove.geoid,
+    );
+
+    if (remainingProfiles.length === 1) {
+      openProfileFromCompare(remainingProfiles[0]);
+      return;
+    }
+
+    setCompareProfiles(remainingProfiles);
+
+    if (remainingProfiles.length === 0) {
+      setSearchView("results");
+      setFeedback("Compare list cleared.");
+      return;
+    }
+
+    setFeedback(`Removed ${profileToRemove.name} from compare.`);
   }
 
   async function handleSearch(params: SearchParams) {
@@ -97,20 +171,13 @@ export default function App() {
     try {
       const response = await api.search(params);
       setSurface("search");
+      setSearchView("results");
       setSearchRows(response.results);
       setFeedback(`Found ${response.count} result${response.count === 1 ? "" : "s"} for “${response.query}”.`);
-
-      if (response.results[0]) {
-        const nextSelection: SelectedRow = {
-          kind: "search",
-          item: response.results[0],
-        };
-        setSelected(nextSelection);
-        void loadProfile(nextSelection.item.name);
-      } else {
-        setSelected(null);
-        setProfile(null);
-      }
+      setSelected(null);
+      setProfile(null);
+      setNearestRows([]);
+      setNearestStatus("");
     } catch (error) {
       setFeedback(error instanceof Error ? error.message : "Search request failed.");
     } finally {
@@ -126,49 +193,149 @@ export default function App() {
           <p className="status-copy">{feedback}</p>
         </header>
 
-        {surface === "search" ? (
-          <section className="search-home">
-            <SearchPanel onSearch={handleSearch} isLoading={isSearching} compact />
-            <nav className="action-links" aria-label="Primary actions">
-              <button className="text-link" onClick={() => setSurface("top")} type="button">
-                Top
-              </button>
-              <button className="text-link" onClick={() => setSurface("bottom")} type="button">
-                Bottom
-              </button>
-            </nav>
-          </section>
-        ) : (
-          <TopBottomPanel mode={surface} onBack={() => setSurface("search")} />
-        )}
-
-        {surface === "search" ? (
-          <div className="content-grid">
-            <ResultsTable
-              resultKind="search"
-              rows={searchRows}
-              selected={selected}
-              onSelect={(nextSelection) => {
-                setSelected(nextSelection);
-                void loadProfile(selectedName(nextSelection)!);
+        {compareProfiles.length > 1 ? (
+          <div className="compare-launch">
+            <button
+              className="primary-button"
+              onClick={() => {
+                setSurface("search");
+                setSearchView("compare");
               }}
-              title="Geographies"
-              subtitle="Choose a result to open its profile."
-            />
-            <DetailPanel selected={selected} profile={profile} isLoading={isLoadingProfile} />
+              type="button"
+            >
+              Compare {compareProfiles.length} geographies
+            </button>
           </div>
         ) : null}
 
-        <details className="settings-drawer">
-          <summary>Connection settings</summary>
-          <ApiSettingsPanel
+        {surface === "search" ? (
+          <section className="search-home">
+            <nav className="action-links" aria-label="Primary actions">
+              <button className="text-link" onClick={() => setSurface("ranking")} type="button">
+                Ranking
+              </button>
+            </nav>
+            <SearchPanel onSearch={handleSearch} isLoading={isSearching} compact />
+          </section>
+        ) : (
+          <TopBottomPanel
             config={config}
-            onChange={setConfig}
-            healthStatus={healthStatus}
-            onCheckHealth={handleCheckHealth}
-            isCheckingHealth={isCheckingHealth}
+            comparedGeoids={new Set(compareProfiles.map((profileItem) => profileItem.geoid ?? ""))}
+            onAddCompareProfile={handleAddCompareProfile}
+            onBack={() => setSurface("search")}
           />
-        </details>
+        )}
+
+        {surface === "search" ? (
+          <div className="results-stack">
+            {searchView === "results" && compareProfiles.length > 0 ? (
+              <div className="compare-launch">
+                <button className="primary-button" onClick={() => setSearchView("compare")} type="button">
+                  Compare {compareProfiles.length} geographies
+                </button>
+              </div>
+            ) : null}
+            {searchView === "results" && searchRows.length > 0 ? (
+              <ResultsTable
+                resultKind="search"
+                rows={searchRows}
+                selected={selected}
+                onAddCompare={(row) => {
+                  void handleAddCompare(row);
+                }}
+                comparedGeoids={new Set(compareProfiles.map((profileItem) => profileItem.geoid ?? ""))}
+                onSelect={(nextSelection) => {
+                  setSelected(nextSelection);
+                  setSearchView("profile");
+                  void loadProfileForSelection(nextSelection as SearchSelection);
+                }}
+                title=""
+                subtitle=""
+              />
+            ) : null}
+            {searchView === "profile" ? (
+              <div className="profile-view">
+                <button
+                  className="text-link back-link"
+                  onClick={() => {
+                    setSearchView("results");
+                    setNearestRows([]);
+                    setNearestStatus("");
+                  }}
+                  type="button"
+                >
+                  Back to results
+                </button>
+                <DetailPanel
+                  selected={selected}
+                  profile={profile}
+                  isLoading={isLoadingProfile}
+                  actions={
+                    profile ? (
+                      <div className="profile-actions">
+                        <button
+                          className="text-link"
+                          onClick={() => handleAddCompareProfile(profile)}
+                          type="button"
+                        >
+                          {profile.geoid && compareProfiles.some((item) => item.geoid === profile.geoid)
+                            ? "Added to compare"
+                            : "Add to compare"}
+                        </button>
+                      </div>
+                    ) : null
+                  }
+                />
+                {profile ? (
+                  <NearestPanel
+                    profile={profile}
+                    rows={nearestRows}
+                    isLoading={isLoadingNearest}
+                    statusText={nearestStatus}
+                    onRun={({ scope, where, n }) => {
+                      void (async () => {
+                        setIsLoadingNearest(true);
+                        setNearestStatus("Finding closest geographies...");
+                        try {
+                          const response = await api.nearest({
+                            name: profile.display_name,
+                            scope,
+                            where,
+                            n,
+                            official_labels: true,
+                          });
+                          setNearestRows(response.results);
+                          setNearestStatus(
+                            response.results.length > 0
+                              ? `Showing ${response.results.length} closest geographies.`
+                              : "No nearby geographies matched that filter.",
+                          );
+                        } catch (error) {
+                          setFeedback(error instanceof Error ? error.message : "Nearest request failed.");
+                          setNearestStatus(error instanceof Error ? error.message : "Nearest request failed.");
+                        } finally {
+                          setIsLoadingNearest(false);
+                        }
+                      })();
+                    }}
+                    onOpen={(row) => {
+                      const nextSelection: SearchSelection = { kind: "search", item: row.geography };
+                      setSelected(nextSelection);
+                      void loadProfileForSelection(nextSelection);
+                    }}
+                  />
+                ) : null}
+              </div>
+            ) : null}
+            {searchView === "compare" ? (
+              <ComparePanel
+                profiles={compareProfiles}
+                onBack={() => setSearchView("results")}
+                onRemove={handleRemoveCompare}
+              />
+            ) : null}
+          </div>
+        ) : null}
       </main>
     </div>
   );

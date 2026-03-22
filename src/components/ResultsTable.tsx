@@ -14,6 +14,8 @@ type ResultsTableProps = {
   rows: GeographySummary[] | RemotenessRow[] | LocalAverageRow[];
   selected: SelectedRow | null;
   onSelect: (row: SelectedRow) => void;
+  onAddCompare?: (row: GeographySummary) => void;
+  comparedGeoids?: Set<string>;
   title: string;
   subtitle: string;
 };
@@ -35,6 +37,8 @@ export function ResultsTable({
   rows,
   selected,
   onSelect,
+  onAddCompare,
+  comparedGeoids,
   title,
   subtitle,
 }: ResultsTableProps) {
@@ -55,6 +59,7 @@ export function ResultsTable({
                   <th>Type</th>
                   <th>State</th>
                   <th>GEOID</th>
+                  <th></th>
                 </tr>
               ) : resultKind === "remoteness" ? (
                 <tr>
@@ -93,6 +98,20 @@ export function ResultsTable({
                         <td>{friendlySumlevel(row.sumlevel)}</td>
                         <td>{row.state ?? "—"}</td>
                         <td>{row.geoid ?? "—"}</td>
+                        <td>
+                          {onAddCompare ? (
+                            <button
+                              className="row-action"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                onAddCompare(row);
+                              }}
+                              type="button"
+                            >
+                              {row.geoid && comparedGeoids?.has(row.geoid) ? "Added" : "Compare"}
+                            </button>
+                          ) : null}
+                        </td>
                       </tr>
                     );
                   })
