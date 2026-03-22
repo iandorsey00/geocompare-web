@@ -2,10 +2,16 @@
 
 set -euo pipefail
 
-REMOTE_HOST="${REMOTE_HOST:-146.190.43.199}"
-REMOTE_USER="${REMOTE_USER:-ian}"
+REMOTE_HOST="${REMOTE_HOST:-}"
+REMOTE_USER="${REMOTE_USER:-}"
 REMOTE_TMP_DIR="${REMOTE_TMP_DIR:-/tmp/geocompare-web-dist}"
 REMOTE_TARGET_DIR="${REMOTE_TARGET_DIR:-/var/www/geocompare-web}"
+
+if [[ -z "$REMOTE_HOST" || -z "$REMOTE_USER" ]]; then
+  echo "Set REMOTE_HOST and REMOTE_USER before running deploy-static.sh." >&2
+  exit 1
+fi
+
 SSH_TARGET="${REMOTE_USER}@${REMOTE_HOST}"
 
 npm install

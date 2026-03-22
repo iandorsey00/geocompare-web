@@ -4,21 +4,22 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-REMOTE_HOST="${REMOTE_HOST:-146.190.43.199}"
-REMOTE_USER="${REMOTE_USER:-ian}"
+REMOTE_HOST="${REMOTE_HOST:-}"
+REMOTE_USER="${REMOTE_USER:-}"
 SSH_TARGET="${REMOTE_USER}@${REMOTE_HOST}"
 
 WEB_TARGET_DIR="${WEB_TARGET_DIR:-/var/www/geocompare-web}"
-GEOCOMPARE_REMOTE_DIR="${GEOCOMPARE_REMOTE_DIR:-/home/ian/geocompare/app}"
-GEORESOLVE_REMOTE_DIR="${GEORESOLVE_REMOTE_DIR:-/home/ian/georesolve/app}"
+GEOCOMPARE_REMOTE_DIR="${GEOCOMPARE_REMOTE_DIR:-/srv/geocompare/app}"
+GEORESOLVE_REMOTE_DIR="${GEORESOLVE_REMOTE_DIR:-/srv/georesolve/app}"
 
 GEOCOMPARE_SERVICE="${GEOCOMPARE_SERVICE:-geocompare.service}"
 GEORESOLVE_SERVICE="${GEORESOLVE_SERVICE:-georesolve.service}"
 
-LOCAL_GEOCOMPARE_REPO="${LOCAL_GEOCOMPARE_REPO:-/Users/iandorsey/dev/geocompare}"
-LOCAL_GEOCOMPARE_SQLITE_PATH="${LOCAL_GEOCOMPARE_SQLITE_PATH:-/Users/iandorsey/dev/geocompare/bin/default.sqlite}"
-REMOTE_GEOCOMPARE_SQLITE_PATH="${REMOTE_GEOCOMPARE_SQLITE_PATH:-/home/ian/geocompare/data/default.sqlite}"
+LOCAL_GEOCOMPARE_REPO="${LOCAL_GEOCOMPARE_REPO:-$ROOT_DIR/../geocompare}"
+LOCAL_GEOCOMPARE_SQLITE_PATH="${LOCAL_GEOCOMPARE_SQLITE_PATH:-$LOCAL_GEOCOMPARE_REPO/bin/default.sqlite}"
+REMOTE_GEOCOMPARE_SQLITE_PATH="${REMOTE_GEOCOMPARE_SQLITE_PATH:-/srv/geocompare/data/default.sqlite}"
 REMOTE_SQLITE_TMP_PATH="${REMOTE_SQLITE_TMP_PATH:-/tmp/default.sqlite}"
+PUBLIC_BASE_URL="${PUBLIC_BASE_URL:-}"
 
 RUN_WEB=1
 RUN_GEOCOMPARE=1
@@ -47,8 +48,14 @@ Environment overrides:
   GEOCOMPARE_SERVICE, GEORESOLVE_SERVICE
   LOCAL_GEOCOMPARE_REPO, LOCAL_GEOCOMPARE_SQLITE_PATH
   REMOTE_GEOCOMPARE_SQLITE_PATH, REMOTE_SQLITE_TMP_PATH
+  PUBLIC_BASE_URL
 EOF
 }
+
+if [[ -z "$REMOTE_HOST" || -z "$REMOTE_USER" ]]; then
+  echo "Set REMOTE_HOST and REMOTE_USER before running deploy-stack.sh." >&2
+  exit 1
+fi
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -147,7 +154,9 @@ fi
 
 echo
 echo "Done."
-echo "Suggested checks:"
-echo "  https://geocompare.iandorsey.com/"
-echo "  https://geocompare.iandorsey.com/api/health"
-echo "  https://geocompare.iandorsey.com/georesolve-api/health"
+if [[ -n "$PUBLIC_BASE_URL" ]]; then
+  echo "Suggested checks:"
+  echo "  ${PUBLIC_BASE_URL}/"
+  echo "  ${PUBLIC_BASE_URL}/api/health"
+  echo "  ${PUBLIC_BASE_URL}/georesolve-api/health"
+fi

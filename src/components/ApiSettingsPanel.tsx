@@ -42,7 +42,7 @@ export function ApiSettingsPanel({
           <span>Base URL</span>
           <input
             type="url"
-            placeholder="https://geocompare.iandorsey.com"
+            placeholder="https://api.example.com"
             value={config.baseUrl}
             onChange={(event) => updateField("baseUrl", event.target.value)}
           />

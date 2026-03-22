@@ -10,6 +10,14 @@ Current production shape:
   - `/api/*` -> GeoCompare
   - `/georesolve-api/*` -> GeoResolve
 
+Before using the helper scripts, set:
+
+```bash
+export REMOTE_HOST=your.server.ip.or.hostname
+export REMOTE_USER=your-ssh-user
+export PUBLIC_BASE_URL=https://example.yourdomain.com
+```
+
 ## 1. Frontend only
 
 Deploy the static site:
@@ -59,7 +67,7 @@ When backend schema/search changes require a fresh SQLite:
 
 1. rebuild on the local machine that has the ACS/source data
 2. upload the SQLite artifact
-3. replace `/home/ian/geocompare/data/default.sqlite`
+3. replace the live GeoCompare SQLite artifact
 4. restart `geocompare.service`
 
 The helper script can do the upload/swap step when called with:
@@ -71,16 +79,16 @@ npm run deploy:stack -- --with-sqlite
 Defaults used by the helper:
 
 - local SQLite:
-  - `/Users/iandorsey/dev/geocompare/bin/default.sqlite`
+  - sibling checkout at `../geocompare/bin/default.sqlite`
 - remote live SQLite:
-  - `/home/ian/geocompare/data/default.sqlite`
+  - `/srv/geocompare/data/default.sqlite`
 
 ## 4. Caddy
 
 The current site block should include:
 
 ```caddy
-geocompare.iandorsey.com {
+example.yourdomain.com {
     encode gzip zstd
 
     handle_path /georesolve-api/* {
@@ -110,9 +118,9 @@ sudo systemctl reload caddy
 
 Check:
 
-- `https://geocompare.iandorsey.com/`
-- `https://geocompare.iandorsey.com/api/health`
-- `https://geocompare.iandorsey.com/georesolve-api/health`
+- `https://example.yourdomain.com/`
+- `https://example.yourdomain.com/api/health`
+- `https://example.yourdomain.com/georesolve-api/health`
 
 Then test in the UI:
 
@@ -129,7 +137,7 @@ Then test in the UI:
 SQLite rollback:
 
 ```bash
-cp /home/ian/geocompare/data/default.sqlite.bak /home/ian/geocompare/data/default.sqlite
+cp /srv/geocompare/data/default.sqlite.bak /srv/geocompare/data/default.sqlite
 sudo systemctl restart geocompare.service
 ```
 

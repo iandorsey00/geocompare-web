@@ -60,14 +60,14 @@ deploy/
 
 Copy `.env.example` to `.env.local` if you want local overrides.
 
-Current production-oriented defaults:
+Example local proxy settings:
 
 ```bash
 VITE_GEOCOMPARE_API_BASE_URL=/api
 VITE_GEORESOLVE_API_BASE_URL=/georesolve-api
 VITE_GEOCOMPARE_AUTH_USERNAME=
 VITE_GEOCOMPARE_AUTH_PASSWORD=
-GEOCOMPARE_PROXY_TARGET=https://geocompare.iandorsey.com
+GEOCOMPARE_PROXY_TARGET=https://example.yourdomain.com
 GEOCOMPARE_PROXY_AUTH_USERNAME=
 GEOCOMPARE_PROXY_AUTH_PASSWORD=
 ```
@@ -97,6 +97,13 @@ npm run deploy:droplet
 That builds the app and syncs `dist/` to:
 
 - `/var/www/geocompare-web`
+
+Set these first:
+
+```bash
+export REMOTE_HOST=your.server.ip.or.hostname
+export REMOTE_USER=your-ssh-user
+```
 
 ### Full stack helper
 
@@ -150,3 +157,8 @@ See:
 - GeoResolve profile opening is GEOID-first.
 - Compare currently stays table-first; maps are shown on single-profile views only.
 - The current bundle is larger than ideal because of map support and static option data. Lazy loading would be a good future cleanup.
+
+## Security note
+
+- The docs and deploy scripts are written as templates now, but review Git history before making a repo public.
+- Hostnames, usernames, server paths, and prior deployment details are operational metadata, even when they are not secrets.

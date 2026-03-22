@@ -10,6 +10,13 @@ From [/Users/iandorsey/dev/geocompare-web](/Users/iandorsey/dev/geocompare-web):
 npm run deploy:droplet
 ```
 
+Required environment:
+
+```bash
+export REMOTE_HOST=your.server.ip.or.hostname
+export REMOTE_USER=your-ssh-user
+```
+
 ## Full stack code deploy
 
 From [/Users/iandorsey/dev/geocompare-web](/Users/iandorsey/dev/geocompare-web):
@@ -44,7 +51,7 @@ npm run deploy:stack -- --georesolve-only
 
 ## Rebuild GeoCompare SQLite locally
 
-From [/Users/iandorsey/dev/geocompare](/Users/iandorsey/dev/geocompare):
+From your `geocompare` checkout:
 
 ```bash
 source .venv/bin/activate
@@ -62,8 +69,8 @@ npm run deploy:stack -- --sqlite-only
 ## Health checks
 
 ```bash
-curl -i https://geocompare.iandorsey.com/api/health
-curl -i https://geocompare.iandorsey.com/georesolve-api/health
+curl -i https://example.yourdomain.com/api/health
+curl -i https://example.yourdomain.com/georesolve-api/health
 ```
 
 ## Useful service checks on the droplet
@@ -78,6 +85,6 @@ sudo journalctl -u georesolve.service -n 80 --no-pager
 ## SQLite rollback on the droplet
 
 ```bash
-cp /home/ian/geocompare/data/default.sqlite.bak /home/ian/geocompare/data/default.sqlite
+cp /srv/geocompare/data/default.sqlite.bak /srv/geocompare/data/default.sqlite
 sudo systemctl restart geocompare.service
 ```
