@@ -887,12 +887,67 @@ tbody tr.selected {
   .field-row,
   .toggle-row,
   .meta-grid,
-  .search-inline,
-  .search-inline-compact,
-  .search-inline-expanded,
   .ranking-form,
   .nearest-form {
     grid-template-columns: 1fr;
+  }
+
+  .search-inline,
+  .search-inline-compact {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    align-items: end;
+    column-gap: 10px;
+  }
+
+  .search-inline-expanded {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+    column-gap: 10px;
+  }
+
+  .search-inline > label:first-child,
+  .search-inline-compact > label:first-child,
+  .search-inline-expanded > label:first-child {
+    grid-column: 1 / -1;
+  }
+
+  .search-inline-expanded > label:nth-of-type(2) {
+    grid-column: 1;
+  }
+
+  .search-inline-expanded .search-inline-toggle {
+    grid-column: 1 / -1;
+    justify-self: start;
+    min-width: 0;
+    padding-bottom: 0;
+  }
+
+  .search-advanced-toggle {
+    align-self: center;
+    min-height: 0;
+  }
+
+  .search-inline-expanded .search-advanced-toggle {
+    grid-column: 1;
+    justify-self: start;
+  }
+
+  .search-submit-inline {
+    justify-self: end;
+  }
+
+  .metric-row {
+    grid-template-columns: minmax(0, 1.7fr) minmax(78px, 96px) minmax(64px, 82px);
+    column-gap: 12px;
+    padding: 10px 0;
+  }
+
+  .metric-label {
+    line-height: 1.35;
+  }
+
+  .metric-pct {
+    min-width: 0;
   }
 
   .ranking-form-wide {

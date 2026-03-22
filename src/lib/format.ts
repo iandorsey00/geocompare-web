@@ -33,6 +33,7 @@ export function formatMetricValue(key: string, value: number | string | null | u
     if (key.endsWith("_pct")) {
       const pctValue = value <= 1 ? value * 100 : value;
       return `${new Intl.NumberFormat("en-US", {
+        minimumFractionDigits: 1,
         maximumFractionDigits: pctValue >= 10 ? 1 : 2,
       }).format(pctValue)}%`;
     }
@@ -66,6 +67,7 @@ export function formatMetricValue(key: string, value: number | string | null | u
     if (Number.isFinite(parsed)) {
       const pctValue = parsed <= 1 ? parsed * 100 : parsed;
       return `${new Intl.NumberFormat("en-US", {
+        minimumFractionDigits: 1,
         maximumFractionDigits: pctValue >= 10 ? 1 : 2,
       }).format(pctValue)}%`;
     }
