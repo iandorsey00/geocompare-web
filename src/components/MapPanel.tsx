@@ -8,11 +8,29 @@ type MapPanelProps = {
   profile: GeographyProfile;
 };
 
+function getTileLayerConfig(_isDarkMode: boolean) {
+  return {
+    url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+  };
+}
+
 export function MapPanel({ profile }: MapPanelProps) {
   const mapRef = useRef<HTMLDivElement | null>(null);
   const [status, setStatus] = useState("Loading boundary...");
   const [boundary, setBoundary] = useState<GeoJSON.FeatureCollection<GeoJSON.Geometry> | null>(null);
+  const [isDarkMode, setIsDarkMode] = useState(() =>
+    window.matchMedia("(prefers-color-scheme: dark)").matches,
+  );
   const googleHref = useMemo(() => googleMapsUrl(profile), [profile]);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    const onChange = (event: MediaQueryListEvent) => setIsDarkMode(event.matches);
+
+    mediaQuery.addEventListener("change", onChange);
+    return () => mediaQuery.removeEventListener("change", onChange);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -38,13 +56,15 @@ export function MapPanel({ profile }: MapPanelProps) {
       return;
     }
 
+    const tileLayerConfig = getTileLayerConfig(isDarkMode);
+
     const map = L.map(mapRef.current, {
       zoomControl: true,
       attributionControl: true,
     });
 
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    L.tileLayer(tileLayerConfig.url, {
+      attribution: tileLayerConfig.attribution,
     }).addTo(map);
 
     const layer = L.geoJSON(boundary, {
@@ -61,7 +81,7 @@ export function MapPanel({ profile }: MapPanelProps) {
     return () => {
       map.remove();
     };
-  }, [boundary]);
+  }, [boundary, isDarkMode]);
 
   return (
     <SectionCard
@@ -74,7 +94,7 @@ export function MapPanel({ profile }: MapPanelProps) {
         </a>
       }
     >
-      {boundary ? <div className="map-canvas" ref={mapRef} /> : null}
+      {boundary ? <div className={`map-canvas${isDarkMode ? " is-dark" : ""}`} ref={mapRef} /> : null}
       {status ? (
         <div className="plain-state">
           <p>{status}</p>

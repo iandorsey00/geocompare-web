@@ -1,15 +1,17 @@
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
 
 :root {
-  color-scheme: light;
+  color-scheme: light dark;
   font-family: "Inter", "Helvetica Neue", Arial, sans-serif;
   line-height: 1.5;
   font-weight: 450;
   color: #16181c;
   background: #ffffff;
+  --bg: #ffffff;
   --ink: #16181c;
   --muted: #6f706b;
   --line: rgba(22, 24, 28, 0.1);
+  --line-soft: rgba(22, 24, 28, 0.06);
   --panel: transparent;
   --panel-strong: transparent;
   --accent: #1f5fbf;
@@ -17,6 +19,9 @@
   --accent-soft: rgba(31, 95, 191, 0.08);
   --warm: #5d7fb4;
   --shadow: none;
+  --input-bg: #ffffff;
+  --hover-soft: rgba(31, 95, 191, 0.07);
+  --map-border: rgba(22, 24, 28, 0.08);
 }
 
 * {
@@ -27,7 +32,9 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  background: #ffffff;
+  background: var(--bg);
+  font-family: "Inter", "Helvetica Neue", Arial, sans-serif;
+  color: var(--ink);
 }
 
 button,
@@ -42,6 +49,51 @@ button {
 
 #root {
   min-height: 100vh;
+}
+
+.leaflet-container,
+.leaflet-control,
+.leaflet-popup-content-wrapper,
+.leaflet-popup-content {
+  font-family: inherit;
+}
+
+.leaflet-container {
+  background: var(--bg);
+}
+
+.map-canvas.is-dark .leaflet-tile {
+  filter: brightness(0.72) invert(1) contrast(0.88) hue-rotate(190deg) saturate(0.42);
+}
+
+.map-canvas.is-dark .leaflet-container {
+  background: #1b2027;
+}
+
+.leaflet-control-zoom a,
+.leaflet-bar a {
+  background: var(--input-bg);
+  color: var(--ink);
+  border-bottom-color: var(--line);
+}
+
+.leaflet-control-zoom a:hover,
+.leaflet-bar a:hover,
+.leaflet-control-zoom a:focus-visible,
+.leaflet-bar a:focus-visible {
+  background: var(--hover-soft);
+  color: var(--accent-strong);
+}
+
+.leaflet-bar,
+.leaflet-control-zoom {
+  border-color: var(--line);
+}
+
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+  background: var(--input-bg);
+  color: var(--ink);
 }
 
 .app-shell { padding: 32px 24px 48px; }
@@ -73,6 +125,13 @@ button {
   line-height: 0.95;
   letter-spacing: -0.06em;
   font-weight: 700;
+}
+
+.brand-button {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: inherit;
 }
 
 .status-copy {
@@ -141,7 +200,7 @@ button {
   position: sticky;
   top: 0;
   z-index: 5;
-  background: #ffffff;
+  background: var(--bg);
   padding-bottom: 8px;
 }
 
@@ -242,6 +301,37 @@ button {
   align-items: end;
 }
 
+.search-inline-compact {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: end;
+}
+
+.search-inline-expanded {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(0, 1fr) 140px minmax(190px, auto) 56px auto;
+  align-items: end;
+}
+
+.search-advanced-toggle {
+  align-self: end;
+  justify-self: end;
+  display: inline-flex;
+  align-items: center;
+  min-height: 46px;
+  white-space: nowrap;
+}
+
+.search-inline-toggle {
+  align-self: end;
+  justify-self: start;
+  min-width: 190px;
+  min-height: 46px;
+  padding-bottom: 12px;
+}
+
 .settings-grid,
 .field-row,
 .toggle-row,
@@ -310,7 +400,7 @@ input,
 select {
   width: 100%;
   border: 1px solid rgba(23, 32, 51, 0.15);
-  background: #ffffff;
+  background: var(--input-bg);
   border-radius: 0;
   padding: 12px 14px;
   color: var(--ink);
@@ -390,7 +480,7 @@ tbody tr {
 
 tbody tr:hover,
 tbody tr.selected {
-  background: rgba(31, 95, 191, 0.07);
+  background: var(--hover-soft);
 }
 
 .table-subline {
@@ -426,7 +516,7 @@ tbody tr.selected {
 .map-canvas {
   width: 100%;
   height: 360px;
-  border: 1px solid rgba(22, 24, 28, 0.08);
+  border: 1px solid var(--map-border);
 }
 
 .profile-subhead {
@@ -469,7 +559,7 @@ tbody tr.selected {
   display: grid;
   gap: 6px;
   padding: 0 0 16px;
-  border-bottom: 1px solid rgba(22, 24, 28, 0.08);
+  border-bottom: 1px solid var(--map-border);
 }
 
 .source-heading {
@@ -526,7 +616,7 @@ tbody tr.selected {
   gap: 16px;
   align-items: center;
   padding: 12px 0;
-  border-bottom: 1px solid rgba(22, 24, 28, 0.08);
+  border-bottom: 1px solid var(--map-border);
 }
 
 .resolve-open {
@@ -580,7 +670,7 @@ tbody tr.selected {
   width: 100%;
   padding: 12px 0;
   border: 0;
-  border-bottom: 1px solid rgba(22, 24, 28, 0.08);
+  border-bottom: 1px solid var(--map-border);
   background: transparent;
   color: var(--ink);
   text-align: left;
@@ -588,7 +678,7 @@ tbody tr.selected {
 
 .ranking-row.active,
 .ranking-row:hover {
-  background: rgba(31, 95, 191, 0.05);
+  background: var(--hover-soft);
 }
 
 .ranking-rank {
@@ -647,7 +737,7 @@ tbody tr.selected {
   padding: 10px 12px;
   border-radius: 0;
   background: transparent;
-  border-bottom: 1px solid rgba(22, 24, 28, 0.06);
+  border-bottom: 1px solid var(--line-soft);
 }
 
 .metric-row.indent-1 .metric-label {
@@ -665,7 +755,6 @@ tbody tr.selected {
 .metric-main {
   text-align: right;
   white-space: nowrap;
-  font-variant-numeric: tabular-nums;
 }
 
 .metric-pct {
@@ -675,7 +764,6 @@ tbody tr.selected {
   color: var(--muted);
   font-weight: 500;
   white-space: nowrap;
-  font-variant-numeric: tabular-nums;
 }
 
 .profile-text-row {
@@ -694,13 +782,13 @@ tbody tr.selected {
 .compare-table th,
 .compare-table td {
   padding: 10px 12px;
-  border-bottom: 1px solid rgba(22, 24, 28, 0.06);
+  border-bottom: 1px solid var(--line-soft);
   vertical-align: top;
 }
 
 .compare-head-table th,
 .compare-head-table td {
-  background: #ffffff;
+  background: var(--bg);
 }
 
 .compare-label {
@@ -800,6 +888,8 @@ tbody tr.selected {
   .toggle-row,
   .meta-grid,
   .search-inline,
+  .search-inline-compact,
+  .search-inline-expanded,
   .ranking-form,
   .nearest-form {
     grid-template-columns: 1fr;
@@ -818,5 +908,55 @@ tbody tr.selected {
   .hero-note {
     padding: 18px;
     border-radius: 20px;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #111318;
+    --ink: #f3f5f8;
+    --muted: #a7afbc;
+    --line: rgba(255, 255, 255, 0.16);
+    --line-soft: rgba(255, 255, 255, 0.1);
+    --panel: transparent;
+    --panel-strong: transparent;
+    --accent: #6ea4ff;
+    --accent-strong: #c5d9ff;
+    --accent-soft: rgba(110, 164, 255, 0.14);
+    --warm: #8fb2ea;
+    --shadow: none;
+    --input-bg: #181b21;
+    --hover-soft: rgba(110, 164, 255, 0.12);
+    --map-border: rgba(255, 255, 255, 0.14);
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+  }
+
+  input,
+  select {
+    border-color: var(--line);
+    background: var(--input-bg);
+    color: var(--ink);
+  }
+
+  .primary-button {
+    color: #0d1320;
+    background: linear-gradient(135deg, var(--accent) 0%, #9bbfff 100%);
+  }
+
+  .secondary-button {
+    color: var(--accent-strong);
+    background: var(--accent-soft);
+  }
+
+  .clear-field:hover,
+  .resolve-open:hover,
+  .resolve-open.active,
+  .text-link,
+  .row-action {
+    color: var(--accent-strong);
   }
 }

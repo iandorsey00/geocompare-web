@@ -31,6 +31,11 @@ const BOUNDARY_SOURCES: Record<string, BoundarySource> = {
   },
 };
 
+const NATIONAL_BOUNDARY_SOURCE: BoundarySource = {
+  serviceUrl: "https://tigerweb.geo.census.gov/arcgis/rest/services/Generalized_ACS2022/State_County/MapServer",
+  layerIds: [6, 7, 8, 9],
+};
+
 function normalizedGeoid(geoid: string | null) {
   if (!geoid) {
     return "";
@@ -55,9 +60,43 @@ async function queryLayer(serviceUrl: string, layerId: number, geoid: string) {
   return json.features ?? [];
 }
 
+async function queryNationalBoundary(serviceUrl: string, layerId: number) {
+  const params = new URLSearchParams({
+    where: "1=1",
+    outFields: "GEOID,NAME",
+    returnGeometry: "true",
+    outSR: "4326",
+    f: "geojson",
+  });
+  const response = await fetch(`${serviceUrl}/${layerId}/query?${params.toString()}`);
+  if (!response.ok) {
+    throw new Error(`Boundary request failed with status ${response.status}`);
+  }
+  const json = (await response.json()) as FeatureCollection;
+  return json.features ?? [];
+}
+
 export async function fetchBoundary(profile: GeographyProfile) {
   const source = profile.sumlevel ? BOUNDARY_SOURCES[profile.sumlevel] : undefined;
   const geoid = normalizedGeoid(profile.geoid);
+
+  if (profile.sumlevel === "010") {
+    for (const layerId of NATIONAL_BOUNDARY_SOURCE.layerIds) {
+      try {
+        const features = await queryNationalBoundary(NATIONAL_BOUNDARY_SOURCE.serviceUrl, layerId);
+        if (features.length > 0) {
+          return {
+            type: "FeatureCollection",
+            features: features as GeometryFeature[],
+          } satisfies FeatureCollection;
+        }
+      } catch {
+        continue;
+      }
+    }
+
+    return null;
+  }
 
   if (!source || !geoid) {
     return null;

@@ -11,11 +11,18 @@ export function SearchPanel({ onSearch, isLoading, compact = false }: SearchPane
   const [query, setQuery] = useState("");
   const [count, setCount] = useState(10);
   const [includeTracts, setIncludeTracts] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     await onSearch({ q: query, n: count, includeTracts });
   }
+
+  const formClassName = compact
+    ? showAdvanced
+      ? "search-inline-expanded"
+      : "search-inline-compact"
+    : "stack";
 
   return (
     <SectionCard
@@ -23,7 +30,7 @@ export function SearchPanel({ onSearch, isLoading, compact = false }: SearchPane
       title=""
       subtitle=""
     >
-      <form className={compact ? "search-inline" : "stack"} onSubmit={handleSubmit}>
+      <form className={formClassName} onSubmit={handleSubmit}>
         <label>
           <span>Search term</span>
           <div className="input-with-clear">
@@ -47,24 +54,35 @@ export function SearchPanel({ onSearch, isLoading, compact = false }: SearchPane
             ) : null}
           </div>
         </label>
-        <label>
-          <span>Max results</span>
-          <input
-            type="number"
-            min={1}
-            max={100}
-            value={count}
-            onChange={(event) => setCount(Number(event.target.value))}
-          />
-        </label>
-        <label className="inline-toggle">
-          <input
-            type="checkbox"
-            checked={includeTracts}
-            onChange={(event) => setIncludeTracts(event.target.checked)}
-          />
-          <span>Include census tracts</span>
-        </label>
+        {showAdvanced ? (
+          <label>
+            <span>Max results</span>
+            <input
+              type="number"
+              min={1}
+              max={100}
+              value={count}
+              onChange={(event) => setCount(Number(event.target.value))}
+            />
+          </label>
+        ) : null}
+        {showAdvanced ? (
+          <label className="inline-toggle search-inline-toggle">
+            <input
+              type="checkbox"
+              checked={includeTracts}
+              onChange={(event) => setIncludeTracts(event.target.checked)}
+            />
+            <span>Include census tracts</span>
+          </label>
+        ) : null}
+        <button
+          className="text-link search-advanced-toggle"
+          onClick={() => setShowAdvanced((current) => !current)}
+          type="button"
+        >
+          {showAdvanced ? "Hide" : "Advanced"}
+        </button>
         <button className="primary-button search-submit search-submit-inline" disabled={isLoading || !query.trim()} type="submit">
           {isLoading ? "Searching..." : "Search"}
         </button>

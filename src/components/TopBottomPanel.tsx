@@ -185,6 +185,18 @@ export function TopBottomPanel({ config, comparedGeoids, onAddCompareProfile, on
     setNearestStatus("");
     setView("profile");
 
+    if (summary.geoid) {
+      try {
+        const nextProfile = await api.profileByGeoid(summary.geoid, form.officialLabels);
+        setProfile(nextProfile);
+        setFeedback(`Opened ${nextProfile.name}.`);
+        setIsLoadingProfile(false);
+        return;
+      } catch {
+        // Fall back to name-based lookup below.
+      }
+    }
+
     for (const attempt of attempts) {
       try {
         const nextProfile = await api.profile(attempt, form.officialLabels);

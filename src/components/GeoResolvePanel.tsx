@@ -137,7 +137,7 @@ export function GeoResolvePanel({
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [selected, setSelected] = useState<SelectedRow | null>(null);
   const [profile, setProfile] = useState<GeographyProfile | null>(null);
-  const [statusText, setStatusText] = useState("Resolve an address into profile-ready geographies.");
+  const [statusText, setStatusText] = useState("");
 
   const items = buildResolvedItems(resolved);
 
@@ -225,14 +225,13 @@ export function GeoResolvePanel({
       <SectionCard
         eyebrow="GeoResolve"
         title="Resolve an address"
-        subtitle="Turn an address into Census geographies you can open or compare."
         actions={
           <button className="text-link" onClick={onBack} type="button">
             Back to search
           </button>
         }
       >
-        <form className="search-inline" onSubmit={handleResolve}>
+        <form className="search-inline-compact" onSubmit={handleResolve}>
           <label>
             <span>Address</span>
             <div className="input-with-clear">
@@ -256,10 +255,6 @@ export function GeoResolvePanel({
               ) : null}
             </div>
           </label>
-          <div className="resolve-meta-block">
-            <span className="eyebrow">Service</span>
-            <p>{config.georesolveBaseUrl}</p>
-          </div>
           <button className="primary-button search-submit search-submit-inline" disabled={isResolving || !query.trim()} type="submit">
             {isResolving ? "Resolving..." : "Resolve"}
           </button>
@@ -318,9 +313,11 @@ export function GeoResolvePanel({
         </SectionCard>
       ) : (
         <SectionCard eyebrow="" title="" subtitle="">
-          <div className="plain-state">
-            <p>{statusText}</p>
-          </div>
+          {statusText ? (
+            <div className="plain-state">
+              <p>{statusText}</p>
+            </div>
+          ) : null}
         </SectionCard>
       )}
 

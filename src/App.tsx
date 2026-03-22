@@ -61,6 +61,19 @@ export default function App() {
   const api = useMemo(() => new GeoCompareApi(config), [config]);
   const activeSearchController = useRef<AbortController | null>(null);
 
+  function handleReturnHome() {
+    activeSearchController.current?.abort();
+    setSurface("search");
+    setSearchView("results");
+    setSelected(null);
+    setProfile(null);
+    setSearchRows([]);
+    setCompareProfiles([]);
+    setNearestRows([]);
+    setNearestStatus("");
+    setFeedback(DEFAULT_FEEDBACK);
+  }
+
   useEffect(() => {
     document.title = `GeoCompare v${__APP_VERSION__}`;
   }, []);
@@ -93,6 +106,18 @@ export default function App() {
     setNearestRows([]);
     setNearestStatus("");
 
+    if (selection.item.geoid) {
+      try {
+        const nextProfile = await api.profileByGeoid(selection.item.geoid, true);
+        setProfile(nextProfile);
+        setFeedback(`Opened ${nextProfile.name}.`);
+        setIsLoadingProfile(false);
+        return;
+      } catch {
+        // Fall back to name-based lookup below.
+      }
+    }
+
     for (const attempt of attempts) {
       try {
         const nextProfile = await api.profile(attempt, true);
@@ -110,6 +135,14 @@ export default function App() {
   }
 
   async function loadProfileForSummary(summary: GeographySummary) {
+    if (summary.geoid) {
+      try {
+        return await api.profileByGeoid(summary.geoid, true);
+      } catch {
+        // Fall back to name-based lookup below.
+      }
+    }
+
     const attempts = [summary.display_name, summary.name, summary.canonical_name].filter(
       (value, index, items) => Boolean(value) && items.indexOf(value) === index,
     );
@@ -232,15 +265,24 @@ export default function App() {
       }
 
       setSurface("search");
-      setSearchView("results");
       setSearchRows(nextRows);
-      setFeedback(
-        `Found ${nextRows.length} result${nextRows.length === 1 ? "" : "s"} for “${params.q}”.`,
-      );
       setSelected(null);
       setProfile(null);
       setNearestRows([]);
       setNearestStatus("");
+
+      if (nextRows.length === 1) {
+        const nextSelection: SearchSelection = { kind: "search", item: nextRows[0] };
+        setSelected(nextSelection);
+        setSearchView("profile");
+        setFeedback(`Opening ${nextRows[0].name}...`);
+        void loadProfileForSelection(nextSelection);
+      } else {
+        setSearchView("results");
+        setFeedback(
+          `Found ${nextRows.length} result${nextRows.length === 1 ? "" : "s"} for “${params.q}”.`,
+        );
+      }
     } catch (error) {
       if (error instanceof Error && error.message === "Request canceled.") {
         return;
@@ -280,7 +322,9 @@ export default function App() {
     <div className="app-shell">
       <main className="minimal-shell">
         <header className="minimal-header">
-          <p className="brand-mark">GeoCompare</p>
+          <button className="brand-mark brand-button" onClick={handleReturnHome} type="button">
+            GeoCompare
+          </button>
           <p className="status-copy">{feedback}</p>
         </header>
 
