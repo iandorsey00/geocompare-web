@@ -56,17 +56,19 @@ const METRIC_OPTIONS = [
 
 const GEOGRAPHY_SCOPE_OPTIONS = [
   { value: "tracts+", label: "Census tracts" },
+  { value: "zctas+", label: "ZCTAs" },
   { value: "places+", label: "Places" },
   { value: "counties+", label: "Counties" },
+  { value: "states+", label: "States" },
 ];
 
 const FILTER_OPTIONS = [
-  { value: "", label: "No filter" },
   { value: "population>=4000 population_density>=2500", label: "Urban geographies" },
   { value: "population>=100000", label: "Population 100k+" },
   { value: "population_density>=5000", label: "Density 5,000+" },
   { value: "median_household_income>=100000", label: "Median household income 100k+" },
   { value: "__custom__", label: "Custom filter" },
+  { value: "", label: "No filter" },
 ];
 
 const COUNT_OPTIONS = [10, 15, 25, 50];
@@ -74,11 +76,11 @@ const COUNT_OPTIONS = [10, 15, 25, 50];
 const initialState: RankingFormState = {
   direction: "top",
   dataIdentifier: "median_household_income",
-  geographyScope: "tracts+",
+  geographyScope: "places+",
   areaMode: "all",
   stateValue: "",
   countyValue: "",
-  wherePreset: "population>=4000 population_density>=2500",
+  wherePreset: "",
   customWhere: "",
   n: 15,
   officialLabels: false,
