@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ComparePanel } from "./components/ComparePanel";
 import { DetailPanel } from "./components/DetailPanel";
+import { GeoResolvePanel } from "./components/GeoResolvePanel";
 import { NearestPanel } from "./components/NearestPanel";
 import { ResultsTable } from "./components/ResultsTable";
 import { SearchPanel } from "./components/SearchPanel";
@@ -11,21 +12,22 @@ import type {
   GeographyProfile,
   GeographySummary,
   NearestRow,
-  SearchParams,
   SearchSelection,
   SelectedRow,
 } from "./lib/types";
 
 const STORAGE_KEY = "geocompare-web-config";
+const DEFAULT_FEEDBACK = "Search for a geography, or switch into a ranking mode.";
 
 const defaultConfig: ApiConfig = {
   baseUrl: import.meta.env.VITE_GEOCOMPARE_API_BASE_URL ?? "/api",
+  georesolveBaseUrl: import.meta.env.VITE_GEORESOLVE_API_BASE_URL ?? "/georesolve-api",
   username: import.meta.env.VITE_GEOCOMPARE_AUTH_USERNAME ?? "",
   password: import.meta.env.VITE_GEOCOMPARE_AUTH_PASSWORD ?? "",
 };
 
 export default function App() {
-  const [surface, setSurface] = useState<"search" | "ranking">("search");
+  const [surface, setSurface] = useState<"search" | "ranking" | "resolve">("search");
   const [searchView, setSearchView] = useState<"results" | "profile" | "compare">("results");
   const [config] = useState<ApiConfig>(() => {
     const stored = window.localStorage.getItem(STORAGE_KEY);
@@ -49,14 +51,27 @@ export default function App() {
   const [isLoadingNearest, setIsLoadingNearest] = useState(false);
   const [nearestStatus, setNearestStatus] = useState("");
   const [feedback, setFeedback] = useState(
-    "Search for a geography, or switch into a ranking mode.",
+    DEFAULT_FEEDBACK,
   );
 
-  const api = new GeoCompareApi(config);
+  const api = useMemo(() => new GeoCompareApi(config), [config]);
+  const activeSearchController = useRef<AbortController | null>(null);
 
   useEffect(() => {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
   }, [config]);
+
+  useEffect(() => {
+    if (feedback === DEFAULT_FEEDBACK || isSearching || isLoadingProfile || isLoadingNearest) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setFeedback((current) => (current === feedback ? DEFAULT_FEEDBACK : current));
+    }, 4500);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [feedback, isSearching, isLoadingNearest, isLoadingProfile]);
 
   async function loadProfileForSelection(selection: SearchSelection) {
     const attempts = [
@@ -67,6 +82,8 @@ export default function App() {
 
     setIsLoadingProfile(true);
     setProfile(null);
+    setNearestRows([]);
+    setNearestStatus("");
 
     for (const attempt of attempts) {
       try {
@@ -139,6 +156,8 @@ export default function App() {
       },
     });
     setProfile(nextProfile);
+    setNearestRows([]);
+    setNearestStatus("");
     setSearchView("profile");
     setCompareProfiles([]);
     setFeedback(`Opened ${nextProfile.name}.`);
@@ -165,23 +184,65 @@ export default function App() {
     setFeedback(`Removed ${profileToRemove.name} from compare.`);
   }
 
-  async function handleSearch(params: SearchParams) {
+  async function handleSearch(params: { q: string; n: number; includeTracts: boolean }) {
+    activeSearchController.current?.abort();
+    const nextController = new AbortController();
+    activeSearchController.current = nextController;
+
     setIsSearching(true);
     setFeedback("Searching geographies...");
     try {
-      const response = await api.search(params);
+      const requestedCount = params.includeTracts ? params.n : Math.min(Math.max(params.n * 5, 25), 100);
+      const runSearch = (query: string) => api.search({ q: query, n: requestedCount }, nextController.signal);
+      const response = await runSearch(params.q);
+      if (activeSearchController.current !== nextController) {
+        return;
+      }
+
+      let nextRows = params.includeTracts
+        ? response.results.slice(0, params.n)
+        : response.results.filter((row) => row.sumlevel !== "140").slice(0, params.n);
+
+      if (!params.includeTracts && nextRows.length === 0) {
+        const fallbackQueries = [
+          `${params.q} city`,
+          `${params.q} county`,
+          `${params.q} state`,
+        ].filter((value, index, values) => values.indexOf(value) === index);
+
+        for (const fallbackQuery of fallbackQueries) {
+          const fallbackResponse = await runSearch(fallbackQuery);
+          if (activeSearchController.current !== nextController) {
+            return;
+          }
+
+          nextRows = fallbackResponse.results.filter((row) => row.sumlevel !== "140").slice(0, params.n);
+          if (nextRows.length > 0) {
+            break;
+          }
+        }
+      }
+
       setSurface("search");
       setSearchView("results");
-      setSearchRows(response.results);
-      setFeedback(`Found ${response.count} result${response.count === 1 ? "" : "s"} for “${response.query}”.`);
+      setSearchRows(nextRows);
+      setFeedback(
+        `Found ${nextRows.length} result${nextRows.length === 1 ? "" : "s"} for “${params.q}”.`,
+      );
       setSelected(null);
       setProfile(null);
       setNearestRows([]);
       setNearestStatus("");
     } catch (error) {
+      if (error instanceof Error && error.message === "Request canceled.") {
+        return;
+      }
       setFeedback(error instanceof Error ? error.message : "Search request failed.");
     } finally {
-      setIsSearching(false);
+      if (activeSearchController.current === nextController) {
+        activeSearchController.current = null;
+        setIsSearching(false);
+      }
     }
   }
 
@@ -214,9 +275,20 @@ export default function App() {
               <button className="text-link" onClick={() => setSurface("ranking")} type="button">
                 Ranking
               </button>
+              <button className="text-link" onClick={() => setSurface("resolve")} type="button">
+                GeoResolve
+              </button>
             </nav>
             <SearchPanel onSearch={handleSearch} isLoading={isSearching} compact />
           </section>
+        ) : surface === "resolve" ? (
+          <GeoResolvePanel
+            config={config}
+            comparedGeoids={new Set(compareProfiles.map((profileItem) => profileItem.geoid ?? ""))}
+            onAddCompareProfile={handleAddCompareProfile}
+            onBack={() => setSurface("search")}
+            onFeedback={setFeedback}
+          />
         ) : (
           <TopBottomPanel
             config={config}

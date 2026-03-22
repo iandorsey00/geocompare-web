@@ -1,103 +1,108 @@
-# First Deploy
+# VPS Deploy
 
-Recommended first production shape:
+Current production shape:
 
-- keep the backend API where it is now:
-  - `systemd`
-  - bound to `127.0.0.1:8000`
-- deploy the frontend as static files
-- serve both behind the same Caddy site
-- proxy `/api/*` from Caddy to the backend
+- `geocompare` API service on `127.0.0.1:8000`
+- `georesolve` API service on `127.0.0.1:8080`
+- static frontend served from `/var/www/geocompare-web`
+- Caddy routing:
+  - `/` -> frontend
+  - `/api/*` -> GeoCompare
+  - `/georesolve-api/*` -> GeoResolve
 
-This keeps the browser on one origin and avoids client-side credential handling.
+## 1. Frontend only
 
-## 1. Build and deploy with one command
-
-From your local repo:
+Deploy the static site:
 
 ```bash
 npm run deploy:droplet
 ```
 
-That command:
+This:
 
 - installs dependencies if needed
 - builds the frontend
-- uploads `dist/` to the droplet
+- uploads `dist/`
 - syncs it into `/var/www/geocompare-web`
 
-Default deploy target:
+## 2. Full stack helper
 
-- host: `146.190.43.199`
-- user: `ian`
-- remote temp dir: `/tmp/geocompare-web-dist`
-- remote target dir: `/var/www/geocompare-web`
-
-You can override those if needed:
+For the current VPS workflow, the most practical entrypoint is:
 
 ```bash
-REMOTE_HOST=146.190.43.199 \
-REMOTE_USER=ian \
-REMOTE_TARGET_DIR=/var/www/geocompare-web \
-npm run deploy:droplet
+npm run deploy:stack
 ```
 
-The script assumes:
+That script is in [deploy-stack.sh](/Users/iandorsey/dev/geocompare-web/deploy/deploy-stack.sh).
 
-- your SSH access to the droplet already works
-- the remote user can run `sudo rsync` and `sudo mkdir`
-
-## 2. Build the frontend manually
-
-On the server or on your local machine:
+Examples:
 
 ```bash
-npm install
-npm run build
+npm run deploy:stack
 ```
 
-The production build uses `/api` by default, so no special frontend API
-environment variables are required for the same-origin deploy.
-
-## 3. Copy the static build manually
-
-Create a web root and sync the build:
-
 ```bash
-sudo mkdir -p /var/www/geocompare-web
-sudo rsync -av --delete dist/ /var/www/geocompare-web/
+npm run deploy:stack -- --with-sqlite
 ```
 
-If you prefer a one-command local-to-droplet deploy, use:
-
 ```bash
-npm run deploy:droplet
+npm run deploy:stack -- --backend-only
 ```
 
-## 4. Update Caddy
-
-Use [Caddyfile.geocompare-web](/Users/iandorsey/dev/geocompare-web/deploy/Caddyfile.geocompare-web)
-as the template.
-
-Key points:
-
-- `root * /var/www/geocompare-web`
-- `file_server` for the static app
-- `try_files {path} /index.html` for SPA behavior
-- `reverse_proxy 127.0.0.1:8000` for `/api/*`
-
-Replace the placeholder basic-auth hash with a real bcrypt hash if you want to
-keep the full site protected for the first release.
-
-Example hash generation:
-
 ```bash
-caddy hash-password --plaintext 'YOUR_PASSWORD'
+npm run deploy:stack -- --georesolve-only
 ```
 
-Then reload Caddy:
+## 3. GeoCompare SQLite rollout
+
+When backend schema/search changes require a fresh SQLite:
+
+1. rebuild on the local machine that has the ACS/source data
+2. upload the SQLite artifact
+3. replace `/home/ian/geocompare/data/default.sqlite`
+4. restart `geocompare.service`
+
+The helper script can do the upload/swap step when called with:
 
 ```bash
+npm run deploy:stack -- --with-sqlite
+```
+
+Defaults used by the helper:
+
+- local SQLite:
+  - `/Users/iandorsey/dev/geocompare/bin/default.sqlite`
+- remote live SQLite:
+  - `/home/ian/geocompare/data/default.sqlite`
+
+## 4. Caddy
+
+The current site block should include:
+
+```caddy
+geocompare.iandorsey.com {
+    encode gzip zstd
+
+    handle_path /georesolve-api/* {
+        reverse_proxy 127.0.0.1:8080
+    }
+
+    handle_path /api/* {
+        reverse_proxy 127.0.0.1:8000
+    }
+
+    handle {
+        root * /var/www/geocompare-web
+        try_files {path} /index.html
+        file_server
+    }
+}
+```
+
+Validate and reload:
+
+```bash
+sudo caddy validate --config /etc/caddy/Caddyfile
 sudo systemctl reload caddy
 ```
 
@@ -107,12 +112,27 @@ Check:
 
 - `https://geocompare.iandorsey.com/`
 - `https://geocompare.iandorsey.com/api/health`
-- search in the UI
-- a remoteness query
-- a local-average query
-- detail panel loading after row selection
+- `https://geocompare.iandorsey.com/georesolve-api/health`
 
-## 6. Rotate temporary credentials
+Then test in the UI:
 
-If you used temporary or shared credentials during setup, rotate them after the
-deploy is verified.
+- search
+- profile loading
+- compare
+- ranking
+- nearest
+- GeoResolve
+- map display
+
+## 6. Rollback
+
+SQLite rollback:
+
+```bash
+cp /home/ian/geocompare/data/default.sqlite.bak /home/ian/geocompare/data/default.sqlite
+sudo systemctl restart geocompare.service
+```
+
+Frontend rollback:
+
+- re-deploy an older `dist/` build or check out the prior frontend commit and run `npm run deploy:droplet`

@@ -179,6 +179,8 @@ export function TopBottomPanel({ config, comparedGeoids, onAddCompareProfile, on
     setSelected({ kind: "search", item: summary });
     setIsLoadingProfile(true);
     setProfile(null);
+    setNearestRows([]);
+    setNearestStatus("");
     setView("profile");
 
     for (const attempt of attempts) {

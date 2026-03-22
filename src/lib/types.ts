@@ -1,5 +1,6 @@
 export type ApiConfig = {
   baseUrl: string;
+  georesolveBaseUrl: string;
   username: string;
   password: string;
 };
@@ -57,6 +58,33 @@ export type ResolveResponse = {
   query: string;
   count: number;
   results: string[];
+};
+
+export type GeoResolveGeography = {
+  kind: string;
+  name: string | null;
+  geoid: string | null;
+  summary_level: string;
+  source_layer: string;
+};
+
+export type GeoResolveResult = {
+  input: {
+    address: string;
+  };
+  matched_address: string;
+  coordinates: {
+    latitude: number;
+    longitude: number;
+  };
+  geographies: Record<string, GeoResolveGeography | null>;
+  geoids: Record<string, string | null>;
+  metadata: {
+    geocoder: string;
+    geography_source: string;
+    benchmark: string | null;
+    vintage: string | null;
+  };
 };
 
 export type RemotenessRow = {

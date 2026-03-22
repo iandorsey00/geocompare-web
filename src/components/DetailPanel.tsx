@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { formatMetricValue } from "../lib/format";
 import type { GeographyProfile, SelectedRow } from "../lib/types";
+import { MapPanel } from "./MapPanel";
 import { SectionCard } from "./SectionCard";
 
 type DetailPanelProps = {
@@ -239,6 +240,7 @@ export function DetailPanel({ selected, profile, isLoading, actions }: DetailPan
             </p>
             {actions ? <div className="profile-actions">{actions}</div> : null}
           </div>
+          <MapPanel profile={profile} />
           {PROFILE_SECTIONS.map((section) => {
             const rows = section.rows.map((row) => renderMetricRow(profile, row)).filter(Boolean);
             if (rows.length === 0) {
