@@ -109,6 +109,14 @@ const PROFILE_SECTIONS: ProfileSection[] = [
     ],
   },
   {
+    title: "Crime",
+    rows: [
+      { key: "property_crime_count", label: "Property crimes", pctKey: "property_crime_rate" },
+      { key: "total_crime_count", label: "Total crimes", pctKey: "total_crime_rate" },
+      { key: "violent_crime_count", label: "Violent crimes", pctKey: "violent_crime_rate" },
+    ],
+  },
+  {
     title: "Voter registration",
     rows: [
       { key: "registered_voters", label: "Registered voters", pctKey: "registered_voters_pct" },
@@ -126,7 +134,12 @@ function parseNumericMetric(value: number | string | null | undefined) {
   if (typeof value === "number") {
     return Number.isFinite(value) ? value : undefined;
   }
-  const normalized = value.replace(/[$,%]/g, "").replace(/,/g, "").replace(/\/sqmi/g, "").trim();
+  const normalized = value
+    .replace(/[$,%]/g, "")
+    .replace(/,/g, "")
+    .replace(/\/sqmi/g, "")
+    .replace(/\s*sqmi/g, "")
+    .trim();
   if (!normalized) {
     return undefined;
   }
@@ -157,8 +170,22 @@ function derivePercent(profile: GeographyProfile, key: string) {
   };
   const denominator = denominators[key] ? parseNumericMetric(metrics[denominators[key]]) : undefined;
   if (typeof numerator === "number" && typeof denominator === "number" && denominator > 0) {
-    return (numerator / denominator) * 100;
+    return numerator / denominator;
   }
+  return undefined;
+}
+
+function deriveMetricValue(profile: GeographyProfile, key: string) {
+  const metrics = profile.metrics;
+
+  if (key === "population_density") {
+    const population = parseNumericMetric(metrics.population);
+    const landArea = parseNumericMetric(metrics.land_area);
+    if (typeof population === "number" && typeof landArea === "number" && landArea > 0) {
+      return population / landArea;
+    }
+  }
+
   return undefined;
 }
 
@@ -166,9 +193,11 @@ function getPercentValue(profile: GeographyProfile, row: ProfileRow) {
   if (!row.pctKey || row.key.startsWith("__text_")) {
     return undefined;
   }
-  return typeof profile.metrics[row.pctKey] !== "undefined"
-    ? profile.metrics[row.pctKey]
-    : derivePercent(profile, row.key);
+  const derived = derivePercent(profile, row.key);
+  if (typeof derived !== "undefined") {
+    return derived;
+  }
+  return typeof profile.metrics[row.pctKey] !== "undefined" ? profile.metrics[row.pctKey] : undefined;
 }
 
 export function ComparePanel({ profiles, onBack, onRemove }: ComparePanelProps) {
@@ -231,7 +260,13 @@ export function ComparePanel({ profiles, onBack, onRemove }: ComparePanelProps) 
                       );
                     }
 
-                    const anyValue = profiles.some((profile) => typeof profile.metrics[row.key] !== "undefined");
+                    const anyValue = profiles.some((profile) => {
+                      const value =
+                        typeof profile.metrics[row.key] !== "undefined"
+                          ? profile.metrics[row.key]
+                          : deriveMetricValue(profile, row.key);
+                      return typeof value !== "undefined";
+                    });
                     if (!anyValue) {
                       return null;
                     }
@@ -240,7 +275,10 @@ export function ComparePanel({ profiles, onBack, onRemove }: ComparePanelProps) 
                       <tr key={row.key}>
                         <td className={`compare-label indent-${row.indent ?? 0}`.trim()}>{row.label}</td>
                         {profiles.map((profile) => {
-                          const value = profile.metrics[row.key];
+                          const value =
+                            typeof profile.metrics[row.key] !== "undefined"
+                              ? profile.metrics[row.key]
+                              : deriveMetricValue(profile, row.key);
                           const pctValue = getPercentValue(profile, row);
                           return (
                             <td className="compare-value-cell" key={`${profile.geoid ?? profile.name}-${row.key}`}>

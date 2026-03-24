@@ -5,7 +5,8 @@ export function formatNumber(value: number | string | null | undefined) {
 
   if (typeof value === "number") {
     return new Intl.NumberFormat("en-US", {
-      maximumFractionDigits: Math.abs(value) >= 100 ? 0 : 2,
+      minimumFractionDigits: Number.isInteger(value) ? 0 : 1,
+      maximumFractionDigits: Number.isInteger(value) ? 0 : 1,
     }).format(value);
   }
 
@@ -34,7 +35,7 @@ export function formatMetricValue(key: string, value: number | string | null | u
       const pctValue = value <= 1 ? value * 100 : value;
       return `${new Intl.NumberFormat("en-US", {
         minimumFractionDigits: 1,
-        maximumFractionDigits: pctValue >= 10 ? 1 : 2,
+        maximumFractionDigits: 1,
       }).format(pctValue)}%`;
     }
 
@@ -44,13 +45,15 @@ export function formatMetricValue(key: string, value: number | string | null | u
       key === "total_crime_rate"
     ) {
       return `${new Intl.NumberFormat("en-US", {
-        maximumFractionDigits: Math.abs(value) >= 100 ? 1 : 2,
+        minimumFractionDigits: 1,
+        maximumFractionDigits: 1,
       }).format(value)}/100k`;
     }
 
     if (key === "population_density") {
       return `${new Intl.NumberFormat("en-US", {
-        maximumFractionDigits: Math.abs(value) >= 100 ? 0 : 1,
+        minimumFractionDigits: 1,
+        maximumFractionDigits: 1,
       }).format(value)}/sqmi`;
     }
 
@@ -68,7 +71,7 @@ export function formatMetricValue(key: string, value: number | string | null | u
       const pctValue = parsed <= 1 ? parsed * 100 : parsed;
       return `${new Intl.NumberFormat("en-US", {
         minimumFractionDigits: 1,
-        maximumFractionDigits: pctValue >= 10 ? 1 : 2,
+        maximumFractionDigits: 1,
       }).format(pctValue)}%`;
     }
   }
@@ -85,7 +88,8 @@ export function formatMetricValue(key: string, value: number | string | null | u
     const parsed = Number(trimmed.replace(/,/g, ""));
     if (Number.isFinite(parsed)) {
       return `${new Intl.NumberFormat("en-US", {
-        maximumFractionDigits: Math.abs(parsed) >= 100 ? 1 : 2,
+        minimumFractionDigits: 1,
+        maximumFractionDigits: 1,
       }).format(parsed)}/100k`;
     }
   }

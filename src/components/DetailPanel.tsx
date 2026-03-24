@@ -122,9 +122,9 @@ const PROFILE_SECTIONS: ProfileSection[] = [
   {
     title: "Crime",
     rows: [
-      { key: "property_crime_count", label: "Property crimes (NIBRS 2024)", pctKey: "property_crime_rate" },
-      { key: "total_crime_count", label: "Total crimes (NIBRS 2024)", pctKey: "total_crime_rate" },
-      { key: "violent_crime_count", label: "Violent crimes (NIBRS 2024)", pctKey: "violent_crime_rate" },
+      { key: "property_crime_count", label: "Property crimes", pctKey: "property_crime_rate" },
+      { key: "total_crime_count", label: "Total crimes", pctKey: "total_crime_rate" },
+      { key: "violent_crime_count", label: "Violent crimes", pctKey: "violent_crime_rate" },
     ],
   },
   {
@@ -147,7 +147,12 @@ function parseNumericMetric(value: number | string | null | undefined) {
     return Number.isFinite(value) ? value : undefined;
   }
 
-  const normalized = value.replace(/[$,%]/g, "").replace(/,/g, "").replace(/\/sqmi/g, "").trim();
+  const normalized = value
+    .replace(/[$,%]/g, "")
+    .replace(/,/g, "")
+    .replace(/\/sqmi/g, "")
+    .replace(/\s*sqmi/g, "")
+    .trim();
   if (!normalized) {
     return undefined;
   }
@@ -183,7 +188,21 @@ function derivePercent(profile: GeographyProfile, key: string) {
   const denominator = denominatorKey ? parseNumericMetric(metrics[denominatorKey]) : undefined;
 
   if (typeof numerator === "number" && typeof denominator === "number" && denominator > 0) {
-    return (numerator / denominator) * 100;
+    return numerator / denominator;
+  }
+
+  return undefined;
+}
+
+function deriveMetricValue(profile: GeographyProfile, key: string) {
+  const metrics = profile.metrics;
+
+  if (key === "population_density") {
+    const population = parseNumericMetric(metrics.population);
+    const landArea = parseNumericMetric(metrics.land_area);
+    if (typeof population === "number" && typeof landArea === "number" && landArea > 0) {
+      return population / landArea;
+    }
   }
 
   return undefined;
@@ -194,12 +213,16 @@ function getPercentValue(profile: GeographyProfile, row: ProfileRow) {
     return undefined;
   }
 
+  const derived = derivePercent(profile, row.key);
+  if (typeof derived !== "undefined") {
+    return derived;
+  }
+
   const explicit = profile.metrics[row.pctKey];
   if (typeof explicit !== "undefined") {
     return explicit;
   }
-
-  return derivePercent(profile, row.key);
+  return undefined;
 }
 
 function renderMetricRow(profile: GeographyProfile, row: ProfileRow) {
@@ -211,7 +234,10 @@ function renderMetricRow(profile: GeographyProfile, row: ProfileRow) {
     );
   }
 
-  const value = profile.metrics[row.key];
+  const value =
+    typeof profile.metrics[row.key] !== "undefined"
+      ? profile.metrics[row.key]
+      : deriveMetricValue(profile, row.key);
   if (typeof value === "undefined") {
     return null;
   }
