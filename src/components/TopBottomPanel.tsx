@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { GeoCompareApi } from "../lib/api";
 import { formatMetricValue } from "../lib/format";
+import { countiesByState, stateOptions } from "../lib/geo-options";
 import type { ApiConfig, GeographyProfile, NearestRow, RankingRow, SearchSelection } from "../lib/types";
 import { DetailPanel } from "./DetailPanel";
 import { NearestPanel } from "./NearestPanel";
@@ -17,7 +18,9 @@ type RankingFormState = {
   direction: "top" | "bottom";
   dataIdentifier: string;
   geographyScope: string;
-  areaMode: "all" | "zctaPrefix";
+  areaMode: "all" | "state" | "county" | "zctaPrefix";
+  stateValue: string;
+  countyValue: string;
   zctaPrefixValue: string;
   wherePreset: string;
   customWhere: string;
@@ -80,6 +83,8 @@ const initialState: RankingFormState = {
   dataIdentifier: "median_household_income",
   geographyScope: "places+",
   areaMode: "all",
+  stateValue: "",
+  countyValue: "",
   zctaPrefixValue: "",
   wherePreset: "",
   customWhere: "",
@@ -90,6 +95,14 @@ const initialState: RankingFormState = {
 function buildScope(form: RankingFormState) {
   if (form.areaMode === "all") {
     return form.geographyScope;
+  }
+
+  if (form.areaMode === "state" && form.stateValue) {
+    return `${form.geographyScope}${form.stateValue.toLowerCase()}`;
+  }
+
+  if (form.areaMode === "county" && form.countyValue) {
+    return `${form.geographyScope}${form.countyValue}`;
   }
 
   if (form.areaMode === "zctaPrefix" && form.zctaPrefixValue.trim()) {
@@ -115,8 +128,42 @@ export function TopBottomPanel({ config, comparedGeoids, onAddCompareProfile, on
 
   const api = useMemo(() => new GeoCompareApi(config), [config]);
   const effectiveWhere = form.wherePreset === "__custom__" ? form.customWhere.trim() : form.wherePreset;
+  const countyOptions = form.stateValue ? countiesByState[form.stateValue] ?? [] : [];
+
+  const withinOptions = useMemo(() => {
+    switch (form.geographyScope) {
+      case "states+":
+        return [{ value: "all", label: "Everywhere" }];
+      case "counties+":
+        return [
+          { value: "all", label: "Everywhere" },
+          { value: "state", label: "Within state" },
+        ];
+      case "zctas+":
+        return [
+          { value: "all", label: "Everywhere" },
+          { value: "zctaPrefix", label: "ZIP prefix" },
+        ];
+      default:
+        return [
+          { value: "all", label: "Everywhere" },
+          { value: "state", label: "Within state" },
+          { value: "county", label: "Within county" },
+        ];
+    }
+  }, [form.geographyScope]);
 
   async function runRanking() {
+    if (form.areaMode === "state" && !form.stateValue) {
+      setFeedback("Choose a state to run a state-scoped ranking.");
+      return;
+    }
+
+    if (form.areaMode === "county" && (!form.stateValue || !form.countyValue)) {
+      setFeedback("Choose a valid state and county to run a county-scoped ranking.");
+      return;
+    }
+
     if (form.areaMode === "zctaPrefix" && !form.zctaPrefixValue.trim()) {
       setFeedback("Enter a ZIP prefix to run a ZIP-prefixed ZCTA ranking.");
       return;
@@ -264,7 +311,25 @@ export function TopBottomPanel({ config, comparedGeoids, onAddCompareProfile, on
                 setForm((current) => ({
                   ...current,
                   geographyScope: event.target.value,
-                  areaMode: event.target.value === "zctas+" ? current.areaMode : "all",
+                  areaMode: (() => {
+                    const nextScope = event.target.value;
+                    if (nextScope === "states+") {
+                      return "all";
+                    }
+                    if (nextScope === "counties+" && current.areaMode === "county") {
+                      return "state";
+                    }
+                    if (nextScope !== "zctas+" && current.areaMode === "zctaPrefix") {
+                      return "all";
+                    }
+                    return current.areaMode;
+                  })(),
+                  stateValue:
+                    event.target.value === "states+" ? "" : current.stateValue,
+                  countyValue:
+                    event.target.value === "states+" || event.target.value === "counties+"
+                      ? ""
+                      : current.countyValue,
                 }))
               }
             >
@@ -283,14 +348,64 @@ export function TopBottomPanel({ config, comparedGeoids, onAddCompareProfile, on
                 setForm((current) => ({
                   ...current,
                   areaMode: event.target.value as RankingFormState["areaMode"],
+                  stateValue: event.target.value === "all" ? "" : current.stateValue,
+                  countyValue: event.target.value === "county" ? current.countyValue : "",
                   zctaPrefixValue: event.target.value === "zctaPrefix" ? current.zctaPrefixValue : "",
                 }))
               }
             >
-              <option value="all">Everywhere</option>
-              {form.geographyScope === "zctas+" ? <option value="zctaPrefix">ZIP prefix</option> : null}
+              {withinOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
             </select>
           </label>
+          {form.areaMode !== "all" && form.areaMode !== "zctaPrefix" ? (
+            <label>
+              <span>State</span>
+              <select
+                value={form.stateValue}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    stateValue: event.target.value,
+                    countyValue:
+                      current.areaMode === "county" && current.stateValue !== event.target.value ? "" : current.countyValue,
+                  }))
+                }
+              >
+                <option value="">Select a state</option>
+                {stateOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : null}
+          {form.areaMode === "county" ? (
+            <label>
+              <span>County</span>
+              <select
+                value={form.countyValue}
+                disabled={!form.stateValue}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    countyValue: event.target.value,
+                  }))
+                }
+              >
+                <option value="">{form.stateValue ? "Select a county" : "Select a state first"}</option>
+                {countyOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : null}
           {form.areaMode === "zctaPrefix" ? (
             <label className="ranking-zcta-prefix-field">
               <span>ZIP prefix</span>
