@@ -292,9 +292,10 @@ export function TopBottomPanel({ config, comparedGeoids, onAddCompareProfile, on
             </select>
           </label>
           {form.areaMode === "zctaPrefix" ? (
-            <label>
+            <label className="ranking-zcta-prefix-field">
               <span>ZIP prefix</span>
               <input
+                className="ranking-zcta-prefix-input"
                 inputMode="numeric"
                 maxLength={5}
                 pattern="[0-9]*"
@@ -407,20 +408,16 @@ export function TopBottomPanel({ config, comparedGeoids, onAddCompareProfile, on
                       type="button"
                     >
                       <span className="ranking-rank">{index + 1}</span>
-                      <span className="ranking-main">
-                        <strong>{row.geography.name}</strong>
-                        <span className="table-subline">{countyLabel || row.geography.canonical_name}</span>
+                      <strong className="ranking-name">{row.geography.name}</strong>
+                      <span className="ranking-population-value">
+                        {populationValue || "—"}
                       </span>
-                      {populationValue ? (
-                        <span className="ranking-value-block ranking-population-block">
-                          <strong className="ranking-value">{populationValue}</strong>
-                          <span className="table-subline">Population</span>
-                        </span>
-                      ) : null}
-                      <span className="ranking-value-block">
-                        <strong className="ranking-value">{formatMetricValue(form.dataIdentifier, row.metric_value)}</strong>
-                        <span className="table-subline">{resultMetricLabel || row.metric_label}</span>
-                      </span>
+                      <strong className="ranking-metric-value">
+                        {formatMetricValue(form.dataIdentifier, row.metric_value)}
+                      </strong>
+                      <span className="ranking-county">{countyLabel || row.geography.canonical_name}</span>
+                      <span className="ranking-population-label">Population</span>
+                      <span className="ranking-metric-label">{resultMetricLabel || row.metric_label}</span>
                     </button>
                   );
                 })}

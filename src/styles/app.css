@@ -664,9 +664,10 @@ tbody tr.selected {
 
 .ranking-row {
   display: grid;
-  grid-template-columns: 36px minmax(0, 1fr) auto auto;
-  gap: 14px;
-  align-items: center;
+  grid-template-columns: 36px minmax(0, 1fr) minmax(110px, auto) minmax(110px, auto);
+  column-gap: 14px;
+  row-gap: 4px;
+  align-items: end;
   width: 100%;
   padding: 12px 0;
   border: 0;
@@ -682,30 +683,66 @@ tbody tr.selected {
 }
 
 .ranking-rank {
+  grid-column: 1;
+  grid-row: 1 / span 2;
+  align-self: center;
   color: var(--muted);
   font-size: 0.9rem;
 }
 
-.ranking-main {
-  display: grid;
-  gap: 4px;
+.ranking-name,
+.ranking-county {
+  grid-column: 2;
   min-width: 0;
 }
 
-.ranking-value-block {
-  display: grid;
-  gap: 4px;
-  justify-items: end;
-  text-align: right;
-  min-width: 108px;
+.ranking-name {
+  grid-row: 1;
 }
 
-.ranking-value {
+.ranking-county {
+  grid-row: 2;
+  color: var(--muted);
+  font-size: 0.92rem;
+  overflow-wrap: anywhere;
+}
+
+.ranking-population-value,
+.ranking-metric-value,
+.ranking-population-label,
+.ranking-metric-label {
+  text-align: right;
+  justify-self: end;
+}
+
+.ranking-population-value {
+  grid-column: 3;
+  grid-row: 1;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.ranking-metric-value {
+  grid-column: 4;
+  grid-row: 1;
   font-size: 1rem;
 }
 
-.ranking-population-block {
-  min-width: 110px;
+.ranking-population-label {
+  grid-column: 3;
+  grid-row: 2;
+}
+
+.ranking-metric-label {
+  grid-column: 4;
+  grid-row: 2;
+}
+
+.ranking-population-label,
+.ranking-metric-label {
+  color: var(--muted);
+  font-size: 0.92rem;
+  overflow-wrap: anywhere;
 }
 
 .metrics-section {
@@ -1021,18 +1058,14 @@ tbody tr.selected {
   }
 }
   .ranking-row {
-    grid-template-columns: 28px minmax(0, 1fr);
-    align-items: start;
+    grid-template-columns: 28px minmax(0, 1fr) minmax(86px, auto) minmax(86px, auto);
+    align-items: end;
   }
 
-  .ranking-main {
-    grid-column: 2;
-  }
-
-  .ranking-population-block,
-  .ranking-value-block {
-    grid-column: 2;
-    justify-items: start;
-    text-align: left;
-    min-width: 0;
+  .ranking-population-value,
+  .ranking-metric-value,
+  .ranking-population-label,
+  .ranking-metric-label {
+    text-align: right;
+    justify-self: end;
   }
