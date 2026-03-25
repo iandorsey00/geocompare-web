@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
 import { GeoCompareApi } from "../lib/api";
 import { formatMetricValue } from "../lib/format";
-import { countiesByState, stateOptions } from "../lib/geo-options";
 import type { ApiConfig, GeographyProfile, NearestRow, RankingRow, SearchSelection } from "../lib/types";
 import { DetailPanel } from "./DetailPanel";
 import { NearestPanel } from "./NearestPanel";
@@ -18,9 +17,8 @@ type RankingFormState = {
   direction: "top" | "bottom";
   dataIdentifier: string;
   geographyScope: string;
-  areaMode: "all" | "state" | "county";
-  stateValue: string;
-  countyValue: string;
+  areaMode: "all" | "zctaPrefix";
+  zctaPrefixValue: string;
   wherePreset: string;
   customWhere: string;
   n: number;
@@ -82,8 +80,7 @@ const initialState: RankingFormState = {
   dataIdentifier: "median_household_income",
   geographyScope: "places+",
   areaMode: "all",
-  stateValue: "",
-  countyValue: "",
+  zctaPrefixValue: "",
   wherePreset: "",
   customWhere: "",
   n: 15,
@@ -95,12 +92,8 @@ function buildScope(form: RankingFormState) {
     return form.geographyScope;
   }
 
-  if (form.areaMode === "state" && form.stateValue) {
-    return `${form.geographyScope}${form.stateValue.toLowerCase()}`;
-  }
-
-  if (form.areaMode === "county" && form.countyValue) {
-    return `${form.geographyScope}${form.countyValue}`;
+  if (form.areaMode === "zctaPrefix" && form.zctaPrefixValue.trim()) {
+    return `${form.geographyScope}${form.zctaPrefixValue.trim()}`;
   }
 
   return form.geographyScope;
@@ -122,16 +115,10 @@ export function TopBottomPanel({ config, comparedGeoids, onAddCompareProfile, on
 
   const api = useMemo(() => new GeoCompareApi(config), [config]);
   const effectiveWhere = form.wherePreset === "__custom__" ? form.customWhere.trim() : form.wherePreset;
-  const countyOptions = form.stateValue ? countiesByState[form.stateValue] ?? [] : [];
 
   async function runRanking() {
-    if (form.areaMode === "state" && !form.stateValue) {
-      setFeedback("Choose a state to run a state-scoped ranking.");
-      return;
-    }
-
-    if (form.areaMode === "county" && (!form.stateValue || !form.countyValue)) {
-      setFeedback("Choose a valid state and county to run a county-scoped ranking.");
+    if (form.areaMode === "zctaPrefix" && !form.zctaPrefixValue.trim()) {
+      setFeedback("Enter a ZIP prefix to run a ZIP-prefixed ZCTA ranking.");
       return;
     }
 
@@ -277,6 +264,7 @@ export function TopBottomPanel({ config, comparedGeoids, onAddCompareProfile, on
                 setForm((current) => ({
                   ...current,
                   geographyScope: event.target.value,
+                  areaMode: event.target.value === "zctas+" ? current.areaMode : "all",
                 }))
               }
             >
@@ -295,59 +283,30 @@ export function TopBottomPanel({ config, comparedGeoids, onAddCompareProfile, on
                 setForm((current) => ({
                   ...current,
                   areaMode: event.target.value as RankingFormState["areaMode"],
-                  stateValue: event.target.value === "all" ? "" : current.stateValue,
-                  countyValue: event.target.value === "county" ? current.countyValue : "",
+                  zctaPrefixValue: event.target.value === "zctaPrefix" ? current.zctaPrefixValue : "",
                 }))
               }
             >
               <option value="all">Everywhere</option>
-              <option value="state">Within state</option>
-              <option value="county">Within county</option>
+              {form.geographyScope === "zctas+" ? <option value="zctaPrefix">ZIP prefix</option> : null}
             </select>
           </label>
-          {form.areaMode !== "all" ? (
+          {form.areaMode === "zctaPrefix" ? (
             <label>
-              <span>State</span>
-              <select
-                value={form.stateValue}
+              <span>ZIP prefix</span>
+              <input
+                inputMode="numeric"
+                maxLength={5}
+                pattern="[0-9]*"
+                placeholder="9, 92, 926..."
+                value={form.zctaPrefixValue}
                 onChange={(event) =>
                   setForm((current) => ({
                     ...current,
-                    stateValue: event.target.value,
-                    countyValue:
-                      current.areaMode === "county" && current.stateValue !== event.target.value ? "" : current.countyValue,
+                    zctaPrefixValue: event.target.value.replace(/\D/g, "").slice(0, 5),
                   }))
                 }
-              >
-                <option value="">Select a state</option>
-                {stateOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-          ) : null}
-          {form.areaMode === "county" ? (
-            <label>
-              <span>County</span>
-              <select
-                value={form.countyValue}
-                disabled={!form.stateValue}
-                onChange={(event) =>
-                  setForm((current) => ({
-                    ...current,
-                    countyValue: event.target.value,
-                  }))
-                }
-              >
-                <option value="">{form.stateValue ? "Select a county" : "Select a state first"}</option>
-                {countyOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
+              />
             </label>
           ) : null}
           <label>
@@ -433,6 +392,10 @@ export function TopBottomPanel({ config, comparedGeoids, onAddCompareProfile, on
               <div className="metrics-list">
                 {rows.map((row, index) => {
                   const countyLabel = row.geography.counties_display.join(", ");
+                  const populationValue =
+                    row.geography.population !== null && typeof row.geography.population !== "undefined"
+                      ? formatMetricValue("population", row.geography.population)
+                      : "";
 
                   return (
                     <button
@@ -448,10 +411,14 @@ export function TopBottomPanel({ config, comparedGeoids, onAddCompareProfile, on
                         <strong>{row.geography.name}</strong>
                         <span className="table-subline">{countyLabel || row.geography.canonical_name}</span>
                       </span>
+                      {populationValue ? (
+                        <span className="ranking-value-block ranking-population-block">
+                          <strong className="ranking-value">{populationValue}</strong>
+                          <span className="table-subline">Population</span>
+                        </span>
+                      ) : null}
                       <span className="ranking-value-block">
-                        <strong className="ranking-value">
-                          {formatMetricValue(form.dataIdentifier, row.metric_value)}
-                        </strong>
+                        <strong className="ranking-value">{formatMetricValue(form.dataIdentifier, row.metric_value)}</strong>
                         <span className="table-subline">{resultMetricLabel || row.metric_label}</span>
                       </span>
                     </button>

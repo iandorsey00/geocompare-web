@@ -12,6 +12,7 @@ export type GeographySummary = {
   sumlevel: string | null;
   state: string | null;
   geoid: string | null;
+  population?: number | string | null;
   counties: string[];
   counties_display: string[];
 };

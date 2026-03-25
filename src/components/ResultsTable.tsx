@@ -58,7 +58,7 @@ export function ResultsTable({
                   <th>Name</th>
                   <th>Type</th>
                   <th>State</th>
-                  <th>GEOID</th>
+                  <th>Population</th>
                   <th></th>
                 </tr>
               ) : resultKind === "remoteness" ? (
@@ -97,7 +97,7 @@ export function ResultsTable({
                         </td>
                         <td>{friendlySumlevel(row.sumlevel)}</td>
                         <td>{row.state ?? "—"}</td>
-                        <td>{row.geoid ?? "—"}</td>
+                        <td>{formatNumber(row.population ?? null)}</td>
                         <td>
                           {onAddCompare ? (
                             <button

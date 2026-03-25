@@ -664,7 +664,7 @@ tbody tr.selected {
 
 .ranking-row {
   display: grid;
-  grid-template-columns: 36px minmax(0, 1fr) auto;
+  grid-template-columns: 36px minmax(0, 1fr) auto auto;
   gap: 14px;
   align-items: center;
   width: 100%;
@@ -697,10 +697,15 @@ tbody tr.selected {
   gap: 4px;
   justify-items: end;
   text-align: right;
+  min-width: 108px;
 }
 
 .ranking-value {
   font-size: 1rem;
+}
+
+.ranking-population-block {
+  min-width: 110px;
 }
 
 .metrics-section {
@@ -1015,3 +1020,19 @@ tbody tr.selected {
     color: var(--accent-strong);
   }
 }
+  .ranking-row {
+    grid-template-columns: 28px minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .ranking-main {
+    grid-column: 2;
+  }
+
+  .ranking-population-block,
+  .ranking-value-block {
+    grid-column: 2;
+    justify-items: start;
+    text-align: left;
+    min-width: 0;
+  }

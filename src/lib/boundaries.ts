@@ -25,6 +25,10 @@ const BOUNDARY_SOURCES: Record<string, BoundarySource> = {
     serviceUrl: "https://tigerweb.geo.census.gov/arcgis/rest/services/Generalized_ACS2022/Places_CouSub_ConCity_SubMCD/MapServer",
     layerIds: [10, 11, 9],
   },
+  "400": {
+    serviceUrl: "https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/Urban/MapServer",
+    layerIds: [8],
+  },
   "860": {
     serviceUrl: "https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/tigerWMS_ACS2022/MapServer",
     layerIds: [0],
