@@ -6,6 +6,7 @@ type FeatureCollection = GeoJSON.FeatureCollection<GeoJSON.Geometry>;
 type BoundarySource = {
   layerIds: number[];
   serviceUrl: string;
+  queryField?: string;
 };
 
 const BOUNDARY_SOURCES: Record<string, BoundarySource> = {
@@ -24,6 +25,11 @@ const BOUNDARY_SOURCES: Record<string, BoundarySource> = {
   "160": {
     serviceUrl: "https://tigerweb.geo.census.gov/arcgis/rest/services/Generalized_ACS2022/Places_CouSub_ConCity_SubMCD/MapServer",
     layerIds: [10, 11, 9],
+  },
+  "310": {
+    serviceUrl: "https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/CBSA/MapServer",
+    layerIds: [15, 16],
+    queryField: "CBSA",
   },
   "400": {
     serviceUrl: "https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/Urban/MapServer",
@@ -48,10 +54,10 @@ function normalizedGeoid(geoid: string | null) {
   return usIndex >= 0 ? geoid.slice(usIndex + 2) : geoid;
 }
 
-async function queryLayer(serviceUrl: string, layerId: number, geoid: string) {
+async function queryLayer(serviceUrl: string, layerId: number, geoid: string, queryField = "GEOID") {
   const params = new URLSearchParams({
-    where: `GEOID='${geoid}'`,
-    outFields: "GEOID,NAME",
+    where: `${queryField}='${geoid}'`,
+    outFields: `${queryField},NAME`,
     returnGeometry: "true",
     outSR: "4326",
     f: "geojson",
@@ -108,7 +114,7 @@ export async function fetchBoundary(profile: GeographyProfile) {
 
   for (const layerId of source.layerIds) {
     try {
-      const features = await queryLayer(source.serviceUrl, layerId, geoid);
+      const features = await queryLayer(source.serviceUrl, layerId, geoid, source.queryField);
       if (features.length > 0) {
         return {
           type: "FeatureCollection",
