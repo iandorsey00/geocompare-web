@@ -90,10 +90,41 @@ function describeResolvedCount(result: GeoResolveResult) {
     : "GeoResolve returned coordinates, but no profile-ready geographies.";
 }
 
+function buildResolvedFactRows(result: GeoResolveResult | null) {
+  if (!result) {
+    return [];
+  }
+
+  const orderedKinds = ["state", "county", "place", "zcta", "tract"];
+
+  return orderedKinds
+    .map((kind) => {
+      const geography = result.geographies[kind];
+      if (!geography) {
+        return null;
+      }
+
+      return {
+        kind,
+        label: geography.name || "Unavailable",
+        geoid: geography.geoid ?? result.geoids[kind] ?? null,
+      };
+    })
+    .filter((item): item is { kind: string; label: string; geoid: string | null } => Boolean(item));
+}
+
 function describeGeoResolveError(error: unknown) {
   const fallback = "GeoResolve is unavailable right now.";
   if (!(error instanceof Error)) {
     return fallback;
+  }
+
+  if (error.message === "Request failed with status 400") {
+    return "Please enter an address, lat/lon, or a map URL that includes coordinates.";
+  }
+
+  if (error.message === "Request failed with status 404") {
+    return "GeoResolve could not match that query.";
   }
 
   if (error.message === "Request failed with status 502") {
@@ -165,6 +196,7 @@ export function GeoResolvePanel({
   const [statusText, setStatusText] = useState("");
 
   const items = buildResolvedItems(resolved);
+  const factRows = buildResolvedFactRows(resolved);
 
   function resetResolveState() {
     setResolved(null);
@@ -234,8 +266,8 @@ export function GeoResolvePanel({
     event.preventDefault();
     setIsResolving(true);
     resetResolveState();
-    setStatusText("Resolving address...");
-    onFeedback("Resolving address...");
+    setStatusText("Resolving query...");
+    onFeedback("Resolving query...");
 
     try {
       const response = await api.georesolve(query);
@@ -292,7 +324,7 @@ export function GeoResolvePanel({
     <div className="top-bottom-shell">
       <SectionCard
         eyebrow="GeoResolve"
-        title="Resolve an address"
+        title="Resolve a place or coordinates"
         actions={
           <button className="text-link" onClick={onBack} type="button">
             Back to search
@@ -301,7 +333,7 @@ export function GeoResolvePanel({
       >
         <form className="search-inline-compact" onSubmit={handleResolve}>
           <label>
-            <span>Address</span>
+            <span>Query</span>
             <div className="input-with-clear">
               <input
                 autoFocus
@@ -313,7 +345,7 @@ export function GeoResolvePanel({
               />
               {query ? (
                 <button
-                  aria-label="Clear address"
+                  aria-label="Clear query"
                   className="clear-field"
                   onClick={() => setQuery("")}
                   type="button"
@@ -341,6 +373,9 @@ export function GeoResolvePanel({
             {isResolving ? "Resolving..." : "Resolve"}
           </button>
         </form>
+        <p className="panel-subtitle">
+          Accepts street addresses, raw lat/lon like `38.8899, -77.0091`, and map URLs only when the URL includes coordinates.
+        </p>
       </SectionCard>
 
       {resolved ? (
@@ -349,14 +384,34 @@ export function GeoResolvePanel({
           title="Resolved geographies"
           subtitle={resolved.matched_address ?? "Current location"}
         >
-          <div className="resolve-summary">
-            <p>
-              <strong>Coordinates</strong> {resolved.coordinates.latitude.toFixed(6)},{" "}
-              {resolved.coordinates.longitude.toFixed(6)}
-            </p>
-            <p>
-              <strong>Provider</strong> {resolved.metadata.geocoder}
-            </p>
+          <div className="resolve-summary-grid">
+            <div className="resolve-meta-block">
+              <p className="meta-label">Latitude / Longitude</p>
+              <p>
+                {resolved.coordinates.latitude.toFixed(6)}, {resolved.coordinates.longitude.toFixed(6)}
+              </p>
+            </div>
+            <div className="resolve-meta-block">
+              <p className="meta-label">Geocoder</p>
+              <p>{resolved.metadata.geocoder}</p>
+            </div>
+            <div className="resolve-meta-block">
+              <p className="meta-label">Benchmark</p>
+              <p>{resolved.metadata.benchmark ?? "Current"}</p>
+            </div>
+            <div className="resolve-meta-block">
+              <p className="meta-label">Vintage</p>
+              <p>{resolved.metadata.vintage ?? "Current"}</p>
+            </div>
+          </div>
+          <div className="resolve-facts">
+            {factRows.map((item) => (
+              <div className="resolve-fact-row" key={item.kind}>
+                <span className="resolve-fact-kind">{humanizeKind(item.kind)}</span>
+                <span className="resolve-fact-label">{item.label}</span>
+                <span className="resolve-fact-geoid">{item.geoid ?? "No GEOID"}</span>
+              </div>
+            ))}
           </div>
           <div className="resolve-results">
             {items.map((item) => (
@@ -369,9 +424,8 @@ export function GeoResolvePanel({
                   type="button"
                 >
                   <span className="resolve-main">{item.label}</span>
-                  <span className="resolve-meta">
-                    {humanizeKind(item.key)} · {item.sourceLayer}
-                  </span>
+                  <span className="resolve-meta">{humanizeKind(item.key)} · {item.sourceLayer}</span>
+                  <span className="resolve-meta">GEOID {item.geoid ?? "Unavailable"}</span>
                 </button>
                 <button
                   className="text-link"

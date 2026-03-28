@@ -168,8 +168,8 @@ export class GeoCompareApi {
     return this.request<ResolveResponse>(this.baseUrl, "/resolve", { query, n }, "resolve");
   }
 
-  georesolve(address: string) {
-    return this.request<GeoResolveResult>(this.georesolveBaseUrl, "/resolve", { address }, "georesolve");
+  georesolve(query: string) {
+    return this.request<GeoResolveResult>(this.georesolveBaseUrl, "/resolve", { query }, "georesolve");
   }
 
   georesolveCurrentLocation(latitude: number, longitude: number) {

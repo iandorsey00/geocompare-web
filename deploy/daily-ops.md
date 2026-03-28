@@ -7,6 +7,7 @@ Short command reference for the current GeoCompare stack.
 From the `geocompare-web` repo:
 
 ```bash
+npm test
 npm run deploy:droplet
 ```
 

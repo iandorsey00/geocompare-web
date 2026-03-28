@@ -17,6 +17,11 @@ export default defineConfig(({ mode }) => {
       __APP_VERSION__: JSON.stringify(pkg.version),
     },
     plugins: [react()],
+    test: {
+      environment: "jsdom",
+      globals: true,
+      setupFiles: "./src/test/setup.ts",
+    },
     server: proxyTarget
       ? {
           proxy: {
@@ -25,6 +30,12 @@ export default defineConfig(({ mode }) => {
               changeOrigin: true,
               secure: true,
               rewrite: (path) => path.replace(/^\/api/, ""),
+              headers: proxyAuth ? { Authorization: proxyAuth } : undefined,
+            },
+            "/georesolve-api": {
+              target: proxyTarget,
+              changeOrigin: true,
+              secure: true,
               headers: proxyAuth ? { Authorization: proxyAuth } : undefined,
             },
           },

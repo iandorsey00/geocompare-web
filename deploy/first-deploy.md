@@ -129,7 +129,10 @@ Then test in the UI:
 - compare
 - ranking
 - nearest
-- GeoResolve
+- GeoResolve address query
+- GeoResolve lat/lon query
+- GeoResolve map URL query with coordinates
+- GeoResolve current location
 - map display
 - footer `Sources` link
 

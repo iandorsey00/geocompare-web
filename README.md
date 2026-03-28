@@ -9,7 +9,7 @@ Web frontend for exploring GeoCompare and GeoResolve.
 - compare multiple geographies
 - run ranking queries
 - run nearest-geography queries
-- resolve street addresses through GeoResolve
+- resolve addresses, coordinates, coordinate-bearing map URLs, and current location through GeoResolve
 - show boundaries on a map for supported geographies
 - show built-in data sources through the app footer
 
@@ -85,6 +85,7 @@ Install Node.js 20+ first, then:
 ```bash
 npm install
 npm run dev
+npm test
 ```
 
 ## Deploy
@@ -155,6 +156,8 @@ See:
 ## Notes
 
 - Search hides census tracts by default, but users can opt in.
+- GeoResolve uses one freeform `query` input and accepts addresses, raw lat/lon, and map URLs only when coordinates are present.
+- GeoResolve current-location lookup uses the browser geolocation API and `/resolve-current-location`.
 - GeoResolve profile opening is GEOID-first.
 - Compare currently stays table-first; maps are shown on single-profile views only.
 - The footer `Sources` link shows the built-in GeoCompare source list from the backend.
