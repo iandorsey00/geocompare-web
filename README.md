@@ -161,6 +161,7 @@ See:
 - GeoResolve profile opening is GEOID-first.
 - Compare currently stays table-first; maps are shown on single-profile views only.
 - The footer `Sources` link shows the built-in GeoCompare source list from the backend.
+- The footer `API` link shows the current web/API version context and the live GET-style query endpoints used by GeoCompare and GeoResolve.
 - The current bundle is larger than ideal because of map support and static option data. Lazy loading would be a good future cleanup.
 
 ## Security note

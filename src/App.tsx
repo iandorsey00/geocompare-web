@@ -40,6 +40,7 @@ export default function App() {
   const [sourceRows, setSourceRows] = useState<SourceRow[]>([]);
   const [isLoadingSources, setIsLoadingSources] = useState(false);
   const [showSources, setShowSources] = useState(false);
+  const [showApiInfo, setShowApiInfo] = useState(false);
   const [feedback, setFeedback] = useState(
     DEFAULT_FEEDBACK,
   );
@@ -302,6 +303,10 @@ export default function App() {
   }
 
   async function handleToggleSources() {
+    if (!showSources) {
+      setShowApiInfo(false);
+    }
+
     if (showSources) {
       setShowSources(false);
       return;
@@ -321,6 +326,14 @@ export default function App() {
     } finally {
       setIsLoadingSources(false);
     }
+  }
+
+  function handleToggleApiInfo() {
+    if (!showApiInfo) {
+      setShowSources(false);
+    }
+
+    setShowApiInfo((current) => !current);
   }
 
   return (
@@ -518,14 +531,60 @@ export default function App() {
           </section>
         ) : null}
 
+        {showApiInfo ? (
+          <section className="sources-panel">
+            <div className="panel-header">
+              <div>
+                <p className="eyebrow">Reference</p>
+                <h2>API</h2>
+                <p className="panel-subtitle">
+                  The current GeoCompare and GeoResolve web APIs are query-based and use HTTP GET.
+                </p>
+              </div>
+            </div>
+            <div className="sources-list">
+              <article className="source-row">
+                <div className="source-heading">
+                  <h3>Version</h3>
+                  <p>GeoCompare Web v{__APP_VERSION__}</p>
+                </div>
+                <p className="source-notes">
+                  GeoCompare and GeoResolve are served separately behind <code>/api</code> and <code>/georesolve-api</code>.
+                </p>
+              </article>
+              <article className="source-row">
+                <div className="source-heading">
+                  <h3>GeoCompare API</h3>
+                  <p>Base path: <code>{config.baseUrl}</code></p>
+                </div>
+                <p className="source-notes">
+                  GET endpoints currently include <code>/search</code>, <code>/profile</code>, <code>/sources</code>, <code>/resolve</code>, <code>/nearest</code>, <code>/top</code>, <code>/bottom</code>, <code>/remoteness</code>, and <code>/local-average</code>.
+                </p>
+              </article>
+              <article className="source-row">
+                <div className="source-heading">
+                  <h3>GeoResolve API</h3>
+                  <p>Base path: <code>{config.georesolveBaseUrl}</code></p>
+                </div>
+                <p className="source-notes">
+                  GET endpoints currently include <code>/resolve?query=...</code> and <code>/resolve-current-location?latitude=...&amp;longitude=...</code>.
+                </p>
+              </article>
+            </div>
+          </section>
+        ) : null}
+
         <footer className="app-footer">
           <div className="footer-links">
             <button className="text-link" onClick={() => void handleToggleSources()} type="button">
               {showSources ? "Hide sources" : "Sources"}
             </button>
+            <button className="text-link" onClick={handleToggleApiInfo} type="button">
+              {showApiInfo ? "Hide API" : "API"}
+            </button>
           </div>
           <p className="footer-copy">
-            GeoCompare, GeoResolve, and GeoCompare Web &copy; {currentYear} · Open source under the MIT License
+            GeoCompare, GeoResolve, and GeoCompare Web &copy; {currentYear} Ian Dorsey. Open source under the MIT License.
           </p>
         </footer>
       </main>

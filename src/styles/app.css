@@ -115,12 +115,14 @@ button {
 .footer-links {
   display: flex;
   justify-content: center;
+  gap: 16px;
 }
 
 .footer-copy {
   margin: 0;
   color: var(--muted);
   font-size: 0.92rem;
+  font-weight: 400;
   text-align: center;
   text-wrap: balance;
 }
