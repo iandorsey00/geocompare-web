@@ -115,18 +115,18 @@ export function NearestPanel({ profile, rows, isLoading, statusText, onRun, onOp
                 type="button"
               >
                 <span className="ranking-rank">{index + 1}</span>
-                <span className="ranking-main">
-                  <strong>{row.geography.name}</strong>
-                  <span className="table-subline">
-                    {row.geography.counties_display.join(", ") || row.geography.canonical_name}
-                  </span>
+                <strong className="ranking-name">{row.geography.name}</strong>
+                <span className="ranking-county">
+                  {row.geography.counties_display.join(", ") || row.geography.canonical_name}
                 </span>
-                <span className="ranking-value-block">
-                  <strong className="ranking-value">
-                    {formatNumber(row.distance)} {row.distance_unit}
-                  </strong>
-                  <span className="table-subline">Distance</span>
-                </span>
+                <strong className="ranking-population-value">
+                  {row.geography.population != null ? formatNumber(row.geography.population) : "—"}
+                </strong>
+                <strong className="ranking-metric-value">
+                  {formatNumber(row.distance)} {row.distance_unit}
+                </strong>
+                <span className="ranking-population-label">Population</span>
+                <span className="ranking-metric-label">Distance</span>
               </button>
             ))}
           </div>
