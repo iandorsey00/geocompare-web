@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import L from "leaflet";
-import { fetchBoundary, googleMapsUrl } from "../lib/boundaries";
+import { fetchBoundary, googleMapsUrl, randomStreetViewUrl } from "../lib/boundaries";
 import type { GeographyProfile } from "../lib/types";
 import { SectionCard } from "./SectionCard";
 
@@ -23,6 +23,7 @@ export function MapPanel({ profile }: MapPanelProps) {
     window.matchMedia("(prefers-color-scheme: dark)").matches,
   );
   const googleHref = useMemo(() => googleMapsUrl(profile), [profile]);
+  const streetViewHref = useMemo(() => randomStreetViewUrl(profile, boundary), [boundary, profile]);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
@@ -89,9 +90,14 @@ export function MapPanel({ profile }: MapPanelProps) {
       title="Boundary"
       subtitle=""
       actions={
-        <a className="text-link" href={googleHref} rel="noreferrer" target="_blank">
-          Open in Google Maps
-        </a>
+        <div className="panel-action-links">
+          <a className="text-link" href={googleHref} rel="noreferrer" target="_blank">
+            Open in Google Maps
+          </a>
+          <a className="text-link" href={streetViewHref} rel="noreferrer" target="_blank">
+            Random Google Street View
+          </a>
+        </div>
       }
     >
       {boundary ? <div className={`map-canvas${isDarkMode ? " is-dark" : ""}`} ref={mapRef} /> : null}

@@ -244,6 +244,12 @@ button {
   margin-bottom: 16px;
 }
 
+.panel-action-links {
+  display: grid;
+  gap: 6px;
+  justify-items: end;
+}
+
 .panel-header h2,
 .detail-stack h3 {
   margin: 0;

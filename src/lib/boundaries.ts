@@ -129,6 +129,94 @@ export async function fetchBoundary(profile: GeographyProfile) {
   return null;
 }
 
+type Point = { latitude: number; longitude: number };
+
+function geometryContainsPoint(geometry: GeoJSON.Geometry, point: Point) {
+  if (geometry.type === "Polygon") {
+    return polygonContainsPoint(geometry.coordinates, point);
+  }
+
+  if (geometry.type === "MultiPolygon") {
+    return geometry.coordinates.some((polygon) => polygonContainsPoint(polygon, point));
+  }
+
+  return false;
+}
+
+function polygonContainsPoint(coordinates: number[][][], point: Point) {
+  const [outerRing, ...holes] = coordinates;
+  if (!outerRing || !ringContainsPoint(outerRing, point)) {
+    return false;
+  }
+
+  return !holes.some((ring) => ringContainsPoint(ring, point));
+}
+
+function ringContainsPoint(ring: number[][], point: Point) {
+  let inside = false;
+  const x = point.longitude;
+  const y = point.latitude;
+
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i, i += 1) {
+    const [xi, yi] = ring[i];
+    const [xj, yj] = ring[j];
+    const intersects =
+      yi > y !== yj > y &&
+      x < ((xj - xi) * (y - yi)) / ((yj - yi) || Number.EPSILON) + xi;
+
+    if (intersects) {
+      inside = !inside;
+    }
+  }
+
+  return inside;
+}
+
+function randomPointWithinBoundary(boundary: FeatureCollection) {
+  const positions = boundary.features.flatMap((feature) => extractPositions(feature.geometry));
+  if (positions.length === 0) {
+    return null;
+  }
+
+  const [firstLongitude, firstLatitude] = positions[0];
+  let minLongitude = firstLongitude;
+  let maxLongitude = firstLongitude;
+  let minLatitude = firstLatitude;
+  let maxLatitude = firstLatitude;
+
+  for (const [longitude, latitude] of positions) {
+    minLongitude = Math.min(minLongitude, longitude);
+    maxLongitude = Math.max(maxLongitude, longitude);
+    minLatitude = Math.min(minLatitude, latitude);
+    maxLatitude = Math.max(maxLatitude, latitude);
+  }
+
+  for (let attempt = 0; attempt < 250; attempt += 1) {
+    const candidate = {
+      latitude: minLatitude + Math.random() * (maxLatitude - minLatitude),
+      longitude: minLongitude + Math.random() * (maxLongitude - minLongitude),
+    };
+
+    if (boundary.features.some((feature) => geometryContainsPoint(feature.geometry, candidate))) {
+      return candidate;
+    }
+  }
+
+  return null;
+}
+
+function extractPositions(geometry: GeoJSON.Geometry): number[][] {
+  if (geometry.type === "Polygon") {
+    return geometry.coordinates.flat();
+  }
+
+  if (geometry.type === "MultiPolygon") {
+    return geometry.coordinates.flat(2);
+  }
+
+  return [];
+}
+
 export function googleMapsUrl(profile: GeographyProfile) {
   const stateLabel = profile.state ? `, ${profile.state.toUpperCase()}` : "";
   const lat = profile.metrics.latitude;
@@ -157,4 +245,17 @@ export function googleMapsUrl(profile: GeographyProfile) {
 
   const query = encodeURIComponent(queryText);
   return `https://www.google.com/maps/search/?api=1&query=${query}`;
+}
+
+export function randomStreetViewUrl(profile: GeographyProfile, boundary: FeatureCollection | null) {
+  const randomPoint = boundary ? randomPointWithinBoundary(boundary) : null;
+  const lat = randomPoint?.latitude ?? Number(profile.metrics.latitude);
+  const lon = randomPoint?.longitude ?? Number(profile.metrics.longitude);
+  const hasCoords = Number.isFinite(lat) && Number.isFinite(lon);
+
+  if (hasCoords) {
+    return `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat},${lon}`;
+  }
+
+  return googleMapsUrl(profile);
 }
