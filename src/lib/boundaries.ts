@@ -218,25 +218,19 @@ function extractPositions(geometry: GeoJSON.Geometry): number[][] {
 }
 
 export function googleMapsUrl(profile: GeographyProfile) {
-  const stateLabel = profile.state ? `, ${profile.state.toUpperCase()}` : "";
   const lat = profile.metrics.latitude;
   const lon = profile.metrics.longitude;
   const hasCoords = (typeof lat === "number" || typeof lat === "string") && (typeof lon === "number" || typeof lon === "string");
 
-  if (profile.sumlevel === "140" && hasCoords) {
+  if (hasCoords) {
     const query = encodeURIComponent(`${lat},${lon}`);
     return `https://www.google.com/maps/search/?api=1&query=${query}`;
   }
 
+  const stateLabel = profile.state ? `, ${profile.state.toUpperCase()}` : "";
   let queryText = profile.display_name || profile.name || profile.canonical_name;
 
-  if (profile.sumlevel === "040") {
-    queryText = profile.name || profile.display_name || profile.canonical_name;
-  } else if (profile.sumlevel === "050") {
-    queryText = profile.counties_display[0] || profile.display_name || profile.name || profile.canonical_name;
-  } else if (profile.sumlevel === "160") {
-    queryText = `${(profile.display_name || profile.name || "").replace(/\s+(city|town|village|borough|CDP),/i, ",")}`;
-  } else if (profile.sumlevel === "860") {
+  if (profile.sumlevel === "860") {
     const zcta = profile.geoid?.replace(/^.*US/, "") || profile.name.replace(/\D/g, "");
     queryText = zcta ? `${zcta}${stateLabel}` : profile.display_name || profile.name || profile.canonical_name;
   } else if (profile.sumlevel === "140") {
