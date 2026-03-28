@@ -15,9 +15,21 @@ function readGeoresolveVersion() {
   }
 }
 
+function readGeocompareVersion() {
+  try {
+    const apiPath = resolve(process.cwd(), "../geocompare/geocompare/interfaces/api.py");
+    const content = readFileSync(apiPath, "utf8");
+    const match = content.match(/version="([^"]+)"/);
+    return match?.[1] ?? "unknown";
+  } catch {
+    return "unknown";
+  }
+}
+
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
   const proxyTarget = env.GEOCOMPARE_PROXY_TARGET;
+  const geocompareVersion = readGeocompareVersion();
   const georesolveVersion = readGeoresolveVersion();
   const proxyAuth =
     env.GEOCOMPARE_PROXY_AUTH_USERNAME && env.GEOCOMPARE_PROXY_AUTH_PASSWORD
@@ -29,6 +41,7 @@ export default defineConfig(({ mode }) => {
   return {
     define: {
       __APP_VERSION__: JSON.stringify(pkg.version),
+      __GEOCOMPARE_VERSION__: JSON.stringify(geocompareVersion),
       __GEORESOLVE_VERSION__: JSON.stringify(georesolveVersion),
     },
     plugins: [react()],

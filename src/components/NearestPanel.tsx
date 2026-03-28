@@ -21,10 +21,10 @@ const SCOPE_OPTIONS = [
 const COUNT_OPTIONS = [5, 10, 15, 25];
 const FILTER_OPTIONS = [
   { value: "", label: "No filter" },
-  { value: "population>=4000 population_density>=2500", label: "Urban geographies" },
-  { value: "population>=100000", label: "Population 100k+" },
-  { value: "population_density>=5000", label: "Density 5,000+" },
-  { value: "median_household_income>=100000", label: "Median household income 100k+" },
+  { value: "population>=10000", label: "Population >= 10,000" },
+  { value: "population>=50000", label: "Population >= 50,000" },
+  { value: "population>=100000", label: "Population >= 100,000" },
+  { value: "population>=1000000", label: "Population >= 1,000,000" },
   { value: "__custom__", label: "Custom filter" },
 ];
 

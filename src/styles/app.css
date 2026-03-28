@@ -615,6 +615,15 @@ tbody tr.selected {
   font-weight: 400;
 }
 
+.source-link-row {
+  margin: 0;
+  color: var(--ink);
+}
+
+.source-link-label {
+  color: var(--muted);
+}
+
 .ranking-results {
   display: grid;
   gap: 12px;

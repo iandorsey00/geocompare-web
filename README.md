@@ -67,11 +67,9 @@ Example local proxy settings:
 VITE_GEOCOMPARE_API_BASE_URL=/api
 VITE_GEORESOLVE_API_BASE_URL=/georesolve-api
 GEOCOMPARE_PROXY_TARGET=https://example.yourdomain.com
-GEOCOMPARE_PROXY_AUTH_USERNAME=
-GEOCOMPARE_PROXY_AUTH_PASSWORD=
 ```
 
-Keep browser-facing auth empty. If you need credentials in local development, put them on the Vite dev proxy side only so they are not bundled into client JavaScript.
+If your local proxy target ever needs credentials, keep them on the Vite dev proxy side only so they are not bundled into client JavaScript.
 
 For same-origin deployment behind Caddy, the frontend should keep using:
 
@@ -160,8 +158,10 @@ See:
 - GeoResolve current-location lookup uses the browser geolocation API and `/resolve-current-location`.
 - GeoResolve profile opening is GEOID-first.
 - Compare currently stays table-first; maps are shown on single-profile views only.
+- Ranking supports states, counties, places, census tracts, ZCTAs, urban areas, and metro areas.
+- Ranking and nearest share the same population-threshold filter presets plus a custom filter path.
 - The footer `Sources` link shows the built-in GeoCompare source list from the backend.
-- The footer `API` link shows the current web and GeoResolve versions, the live GET-style query endpoints used by GeoCompare and GeoResolve, and links to the upstream repositories.
+- The footer `API` link shows the current web, GeoCompare, and GeoResolve versions, the live GET-style query endpoints used by GeoCompare and GeoResolve, and links to the upstream repositories.
 - The current bundle is larger than ideal because of map support and static option data. Lazy loading would be a good future cleanup.
 
 ## Security note

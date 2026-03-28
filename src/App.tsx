@@ -548,6 +548,7 @@ export default function App() {
                   <h3>Versions</h3>
                   <p>GeoCompare Web v{__APP_VERSION__}</p>
                 </div>
+                <p className="source-provider">GeoCompare v{__GEOCOMPARE_VERSION__}</p>
                 <p className="source-provider">GeoResolve v{__GEORESOLVE_VERSION__}</p>
                 <p className="source-notes">
                   GeoCompare and GeoResolve are served separately behind <code>/api</code> and <code>/georesolve-api</code>.
@@ -561,8 +562,9 @@ export default function App() {
                 <p className="source-notes">
                   GET endpoints currently include <code>/search</code>, <code>/profile</code>, <code>/sources</code>, <code>/resolve</code>, <code>/nearest</code>, <code>/top</code>, <code>/bottom</code>, <code>/remoteness</code>, and <code>/local-average</code>.
                 </p>
-                <p className="source-notes">
-                  GitHub: <a className="text-link inline-text-link" href="https://github.com/iandorsey00/geocompare" rel="noreferrer" target="_blank">geocompare</a>
+                <p className="source-link-row">
+                  <span className="source-link-label">GitHub:</span>{" "}
+                  <a className="text-link inline-text-link" href="https://github.com/iandorsey00/geocompare" rel="noreferrer" target="_blank">geocompare</a>
                 </p>
               </article>
               <article className="source-row">
@@ -573,8 +575,9 @@ export default function App() {
                 <p className="source-notes">
                   GET endpoints currently include <code>/resolve?query=...</code> and <code>/resolve-current-location?latitude=...&amp;longitude=...</code>.
                 </p>
-                <p className="source-notes">
-                  GitHub: <a className="text-link inline-text-link" href="https://github.com/iandorsey00/georesolve" rel="noreferrer" target="_blank">georesolve</a>
+                <p className="source-link-row">
+                  <span className="source-link-label">GitHub:</span>{" "}
+                  <a className="text-link inline-text-link" href="https://github.com/iandorsey00/georesolve" rel="noreferrer" target="_blank">georesolve</a>
                 </p>
               </article>
             </div>
