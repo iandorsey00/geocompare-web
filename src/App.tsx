@@ -46,6 +46,7 @@ export default function App() {
 
   const api = useMemo(() => new GeoCompareApi(config), [config]);
   const activeSearchController = useRef<AbortController | null>(null);
+  const currentYear = new Date().getFullYear();
 
   function handleReturnHome() {
     activeSearchController.current?.abort();
@@ -61,8 +62,30 @@ export default function App() {
   }
 
   useEffect(() => {
-    document.title = `GeoCompare v${__APP_VERSION__}`;
-  }, []);
+    const baseTitle = "GeoCompare";
+
+    if (surface === "resolve") {
+      document.title = `GeoResolve - ${baseTitle}`;
+      return;
+    }
+
+    if (surface === "ranking") {
+      document.title = `Ranking - ${baseTitle}`;
+      return;
+    }
+
+    if (searchView === "compare" && compareProfiles.length > 1) {
+      document.title = `Compare ${compareProfiles.length} Geographies - ${baseTitle}`;
+      return;
+    }
+
+    if (profile?.name) {
+      document.title = `${profile.name} - ${baseTitle}`;
+      return;
+    }
+
+    document.title = baseTitle;
+  }, [compareProfiles.length, profile?.name, searchView, surface]);
 
   useEffect(() => {
     if (feedback === DEFAULT_FEEDBACK || isSearching || isLoadingProfile || isLoadingNearest) {
@@ -496,9 +519,14 @@ export default function App() {
         ) : null}
 
         <footer className="app-footer">
-          <button className="text-link" onClick={() => void handleToggleSources()} type="button">
-            {showSources ? "Hide sources" : "Sources"}
-          </button>
+          <div className="footer-links">
+            <button className="text-link" onClick={() => void handleToggleSources()} type="button">
+              {showSources ? "Hide sources" : "Sources"}
+            </button>
+          </div>
+          <p className="footer-copy">
+            GeoCompare, GeoResolve, and GeoCompare Web &copy; {currentYear} · Open source under the MIT License
+          </p>
         </footer>
       </main>
     </div>

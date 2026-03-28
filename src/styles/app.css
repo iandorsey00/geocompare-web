@@ -106,9 +106,23 @@ button {
 }
 
 .app-footer {
+  display: grid;
+  gap: 8px;
+  justify-items: center;
+  padding: 8px 0 24px;
+}
+
+.footer-links {
   display: flex;
   justify-content: center;
-  padding: 8px 0 24px;
+}
+
+.footer-copy {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+  text-align: center;
+  text-wrap: balance;
 }
 
 .minimal-header {
