@@ -23,7 +23,6 @@ export function MapPanel({ profile }: MapPanelProps) {
     window.matchMedia("(prefers-color-scheme: dark)").matches,
   );
   const googleHref = useMemo(() => googleMapsUrl(profile), [profile]);
-  const streetViewHref = useMemo(() => randomStreetViewUrl(profile, boundary), [boundary, profile]);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
@@ -84,6 +83,11 @@ export function MapPanel({ profile }: MapPanelProps) {
     };
   }, [boundary, isDarkMode]);
 
+  function openRandomStreetView() {
+    const nextUrl = randomStreetViewUrl(profile, boundary);
+    window.open(nextUrl, "_blank", "noopener,noreferrer");
+  }
+
   return (
     <SectionCard
       eyebrow="Map"
@@ -94,9 +98,9 @@ export function MapPanel({ profile }: MapPanelProps) {
           <a className="text-link" href={googleHref} rel="noreferrer" target="_blank">
             Open in Google Maps
           </a>
-          <a className="text-link" href={streetViewHref} rel="noreferrer" target="_blank">
+          <button className="text-link" onClick={openRandomStreetView} type="button">
             Random Google Street View
-          </a>
+          </button>
         </div>
       }
     >
