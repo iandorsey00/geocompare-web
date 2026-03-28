@@ -177,6 +177,10 @@ button {
   text-underline-offset: 0.18em;
 }
 
+.inline-text-link {
+  font-size: inherit;
+}
+
 .row-action {
   border: 0;
   background: transparent;
@@ -598,6 +602,7 @@ tbody tr.selected {
 
 .source-heading h3 {
   font-size: 1rem;
+  font-weight: 600;
 }
 
 .source-heading p,
@@ -607,7 +612,7 @@ tbody tr.selected {
 
 .source-provider {
   color: var(--ink);
-  font-weight: 500;
+  font-weight: 400;
 }
 
 .ranking-results {
