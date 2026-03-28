@@ -158,6 +158,7 @@ See:
 - GeoResolve current-location lookup uses the browser geolocation API and `/resolve-current-location`.
 - GeoResolve profile opening is GEOID-first.
 - Compare currently stays table-first; maps are shown on single-profile views only.
+- Random Google Street View now prefers OSM-mapped road points inside the loaded boundary before falling back to a generic random boundary point.
 - Ranking supports states, counties, places, census tracts, ZCTAs, urban areas, and metro areas.
 - Ranking and nearest share the same population-threshold filter presets plus a custom filter path.
 - The footer `Sources` link shows the built-in GeoCompare source list from the backend.

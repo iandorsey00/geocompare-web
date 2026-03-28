@@ -19,6 +19,7 @@ export function MapPanel({ profile }: MapPanelProps) {
   const mapRef = useRef<HTMLDivElement | null>(null);
   const [status, setStatus] = useState("Loading boundary...");
   const [boundary, setBoundary] = useState<GeoJSON.FeatureCollection<GeoJSON.Geometry> | null>(null);
+  const [isGeneratingStreetView, setIsGeneratingStreetView] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(() =>
     window.matchMedia("(prefers-color-scheme: dark)").matches,
   );
@@ -83,9 +84,14 @@ export function MapPanel({ profile }: MapPanelProps) {
     };
   }, [boundary, isDarkMode]);
 
-  function openRandomStreetView() {
-    const nextUrl = randomStreetViewUrl(profile, boundary);
-    window.open(nextUrl, "_blank", "noopener,noreferrer");
+  async function openRandomStreetView() {
+    setIsGeneratingStreetView(true);
+    try {
+      const nextUrl = await randomStreetViewUrl(profile, boundary);
+      window.open(nextUrl, "_blank", "noopener,noreferrer");
+    } finally {
+      setIsGeneratingStreetView(false);
+    }
   }
 
   return (
@@ -98,8 +104,15 @@ export function MapPanel({ profile }: MapPanelProps) {
           <a className="text-link" href={googleHref} rel="noreferrer" target="_blank">
             Open in Google Maps
           </a>
-          <button className="text-link" onClick={openRandomStreetView} type="button">
-            Random Google Street View
+          <button
+            className="text-link"
+            disabled={isGeneratingStreetView}
+            onClick={() => {
+              void openRandomStreetView();
+            }}
+            type="button"
+          >
+            {isGeneratingStreetView ? "Finding road..." : "Random Google Street View"}
           </button>
         </div>
       }

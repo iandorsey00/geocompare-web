@@ -2,6 +2,13 @@ import type { GeographyProfile } from "./types";
 
 type GeometryFeature = GeoJSON.Feature<GeoJSON.Geometry>;
 type FeatureCollection = GeoJSON.FeatureCollection<GeoJSON.Geometry>;
+type OverpassElement = {
+  type: string;
+  geometry?: Array<{ lat: number; lon: number }>;
+};
+type OverpassResponse = {
+  elements?: OverpassElement[];
+};
 
 type BoundarySource = {
   layerIds: number[];
@@ -130,6 +137,12 @@ export async function fetchBoundary(profile: GeographyProfile) {
 }
 
 type Point = { latitude: number; longitude: number };
+type Bounds = {
+  minLongitude: number;
+  maxLongitude: number;
+  minLatitude: number;
+  maxLatitude: number;
+};
 
 function geometryContainsPoint(geometry: GeoJSON.Geometry, point: Point) {
   if (geometry.type === "Polygon") {
@@ -172,7 +185,7 @@ function ringContainsPoint(ring: number[][], point: Point) {
   return inside;
 }
 
-function randomPointWithinBoundary(boundary: FeatureCollection) {
+function getBoundaryBounds(boundary: FeatureCollection): Bounds | null {
   const positions = boundary.features.flatMap((feature) => extractPositions(feature.geometry));
   if (positions.length === 0) {
     return null;
@@ -191,6 +204,22 @@ function randomPointWithinBoundary(boundary: FeatureCollection) {
     maxLatitude = Math.max(maxLatitude, latitude);
   }
 
+  return {
+    minLongitude,
+    maxLongitude,
+    minLatitude,
+    maxLatitude,
+  };
+}
+
+function randomPointWithinBoundary(boundary: FeatureCollection) {
+  const bounds = getBoundaryBounds(boundary);
+  if (!bounds) {
+    return null;
+  }
+
+  const { minLongitude, maxLongitude, minLatitude, maxLatitude } = bounds;
+
   for (let attempt = 0; attempt < 250; attempt += 1) {
     const candidate = {
       latitude: minLatitude + Math.random() * (maxLatitude - minLatitude),
@@ -203,6 +232,61 @@ function randomPointWithinBoundary(boundary: FeatureCollection) {
   }
 
   return null;
+}
+
+async function fetchRoadPointWithinBoundary(boundary: FeatureCollection) {
+  const bounds = getBoundaryBounds(boundary);
+  if (!bounds) {
+    return null;
+  }
+
+  const { minLatitude, minLongitude, maxLatitude, maxLongitude } = bounds;
+  const query = `
+[out:json][timeout:12];
+(
+  way["highway"]["highway"!~"footway|path|cycleway|steps|bridleway|corridor|elevator|platform|proposed|construction"]
+    (${minLatitude},${minLongitude},${maxLatitude},${maxLongitude});
+);
+out geom;
+`.trim();
+
+  const response = await fetch("https://overpass-api.de/api/interpreter", {
+    method: "POST",
+    headers: {
+      "Content-Type": "text/plain;charset=UTF-8",
+    },
+    body: query,
+  });
+
+  if (!response.ok) {
+    throw new Error(`Road lookup failed with status ${response.status}`);
+  }
+
+  const json = (await response.json()) as OverpassResponse;
+  const candidatePoints: Point[] = [];
+
+  for (const element of json.elements ?? []) {
+    if (element.type !== "way" || !element.geometry) {
+      continue;
+    }
+
+    for (const point of element.geometry) {
+      const candidate = {
+        latitude: point.lat,
+        longitude: point.lon,
+      };
+
+      if (boundary.features.some((feature) => geometryContainsPoint(feature.geometry, candidate))) {
+        candidatePoints.push(candidate);
+      }
+    }
+  }
+
+  if (candidatePoints.length === 0) {
+    return null;
+  }
+
+  return candidatePoints[Math.floor(Math.random() * candidatePoints.length)] ?? null;
 }
 
 function extractPositions(geometry: GeoJSON.Geometry): number[][] {
@@ -241,8 +325,21 @@ export function googleMapsUrl(profile: GeographyProfile) {
   return `https://www.google.com/maps/search/?api=1&query=${query}`;
 }
 
-export function randomStreetViewUrl(profile: GeographyProfile, boundary: FeatureCollection | null) {
-  const randomPoint = boundary ? randomPointWithinBoundary(boundary) : null;
+export async function randomStreetViewUrl(profile: GeographyProfile, boundary: FeatureCollection | null) {
+  let randomPoint: Point | null = null;
+
+  if (boundary) {
+    try {
+      randomPoint = await fetchRoadPointWithinBoundary(boundary);
+    } catch {
+      randomPoint = null;
+    }
+
+    if (!randomPoint) {
+      randomPoint = randomPointWithinBoundary(boundary);
+    }
+  }
+
   const lat = randomPoint?.latitude ?? Number(profile.metrics.latitude);
   const lon = randomPoint?.longitude ?? Number(profile.metrics.longitude);
   const hasCoords = Number.isFinite(lat) && Number.isFinite(lon);
