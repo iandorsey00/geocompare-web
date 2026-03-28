@@ -1,4 +1,3 @@
-import { useState } from "react";
 import type { ApiConfig } from "../lib/types";
 import { SectionCard } from "./SectionCard";
 
@@ -17,8 +16,6 @@ export function ApiSettingsPanel({
   onCheckHealth,
   isCheckingHealth,
 }: ApiSettingsPanelProps) {
-  const [showPassword, setShowPassword] = useState(false);
-
   function updateField<K extends keyof ApiConfig>(key: K, value: ApiConfig[K]) {
     onChange({
       ...config,
@@ -48,30 +45,13 @@ export function ApiSettingsPanel({
           />
         </label>
         <label>
-          <span>Basic auth username</span>
+          <span>GeoResolve base URL</span>
           <input
-            type="text"
-            placeholder="Optional"
-            value={config.username}
-            onChange={(event) => updateField("username", event.target.value)}
+            type="url"
+            placeholder="https://georesolve.example.com"
+            value={config.georesolveBaseUrl}
+            onChange={(event) => updateField("georesolveBaseUrl", event.target.value)}
           />
-        </label>
-        <label>
-          <span>Basic auth password</span>
-          <input
-            type={showPassword ? "text" : "password"}
-            placeholder="Optional"
-            value={config.password}
-            onChange={(event) => updateField("password", event.target.value)}
-          />
-        </label>
-        <label className="inline-toggle">
-          <input
-            type="checkbox"
-            checked={showPassword}
-            onChange={(event) => setShowPassword(event.target.checked)}
-          />
-          <span>Show password</span>
         </label>
       </div>
       <p className="status-line">{healthStatus}</p>

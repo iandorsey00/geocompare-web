@@ -46,14 +46,6 @@ function withTrailingSlashRemoved(value: string) {
   return value.replace(/\/+$/, "");
 }
 
-function toAuthHeader(username: string, password: string) {
-  if (!username && !password) {
-    return undefined;
-  }
-
-  return `Basic ${btoa(`${username}:${password}`)}`;
-}
-
 function buildQuery(params: Record<string, Primitive>) {
   const searchParams = new URLSearchParams();
 
@@ -70,12 +62,10 @@ function buildQuery(params: Record<string, Primitive>) {
 export class GeoCompareApi {
   private readonly baseUrl: string;
   private readonly georesolveBaseUrl: string;
-  private readonly authHeader?: string;
 
   constructor(config: ApiConfig) {
     this.baseUrl = withTrailingSlashRemoved(config.baseUrl);
     this.georesolveBaseUrl = withTrailingSlashRemoved(config.georesolveBaseUrl);
-    this.authHeader = toAuthHeader(config.username, config.password);
   }
 
   private async request<T>(
@@ -102,7 +92,6 @@ export class GeoCompareApi {
     let response: Response;
     try {
       response = await fetch(url, {
-        headers: this.authHeader ? { Authorization: this.authHeader } : undefined,
         signal: controller.signal,
       });
     } catch (error) {

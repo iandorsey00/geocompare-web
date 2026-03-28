@@ -66,12 +66,12 @@ Example local proxy settings:
 ```bash
 VITE_GEOCOMPARE_API_BASE_URL=/api
 VITE_GEORESOLVE_API_BASE_URL=/georesolve-api
-VITE_GEOCOMPARE_AUTH_USERNAME=
-VITE_GEOCOMPARE_AUTH_PASSWORD=
 GEOCOMPARE_PROXY_TARGET=https://example.yourdomain.com
 GEOCOMPARE_PROXY_AUTH_USERNAME=
 GEOCOMPARE_PROXY_AUTH_PASSWORD=
 ```
+
+Keep browser-facing auth empty. If you need credentials in local development, put them on the Vite dev proxy side only so they are not bundled into client JavaScript.
 
 For same-origin deployment behind Caddy, the frontend should keep using:
 

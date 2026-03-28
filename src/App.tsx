@@ -17,31 +17,17 @@ import type {
   SourceRow,
 } from "./lib/types";
 
-const STORAGE_KEY = "geocompare-web-config";
 const DEFAULT_FEEDBACK = "Search for a geography, or switch into a ranking mode.";
 
 const defaultConfig: ApiConfig = {
   baseUrl: import.meta.env.VITE_GEOCOMPARE_API_BASE_URL ?? "/api",
   georesolveBaseUrl: import.meta.env.VITE_GEORESOLVE_API_BASE_URL ?? "/georesolve-api",
-  username: import.meta.env.VITE_GEOCOMPARE_AUTH_USERNAME ?? "",
-  password: import.meta.env.VITE_GEOCOMPARE_AUTH_PASSWORD ?? "",
 };
 
 export default function App() {
   const [surface, setSurface] = useState<"search" | "ranking" | "resolve">("search");
   const [searchView, setSearchView] = useState<"results" | "profile" | "compare">("results");
-  const [config] = useState<ApiConfig>(() => {
-    const stored = window.localStorage.getItem(STORAGE_KEY);
-    if (!stored) {
-      return defaultConfig;
-    }
-
-    try {
-      return { ...defaultConfig, ...JSON.parse(stored) };
-    } catch {
-      return defaultConfig;
-    }
-  });
+  const [config] = useState<ApiConfig>(defaultConfig);
   const [isSearching, setIsSearching] = useState(false);
   const [isLoadingProfile, setIsLoadingProfile] = useState(false);
   const [searchRows, setSearchRows] = useState<GeographySummary[]>([]);
@@ -77,10 +63,6 @@ export default function App() {
   useEffect(() => {
     document.title = `GeoCompare v${__APP_VERSION__}`;
   }, []);
-
-  useEffect(() => {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
-  }, [config]);
 
   useEffect(() => {
     if (feedback === DEFAULT_FEEDBACK || isSearching || isLoadingProfile || isLoadingNearest) {

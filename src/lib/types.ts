@@ -1,8 +1,6 @@
 export type ApiConfig = {
   baseUrl: string;
   georesolveBaseUrl: string;
-  username: string;
-  password: string;
 };
 
 export type GeographySummary = {
