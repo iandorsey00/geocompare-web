@@ -84,12 +84,18 @@ function renderRemotenessCard(row: RemotenessRow, selected: SelectedRow | null, 
     >
       <div className="mobile-result-main">
         <strong>{row.candidate.name}</strong>
-        <p>{friendlySumlevel(row.candidate.sumlevel)}</p>
+        <p>
+          {friendlySumlevel(row.candidate.sumlevel)}
+          {row.candidate.population != null ? ` · Population ${formatNumber(row.candidate.population)}` : ""}
+        </p>
       </div>
       <div className="mobile-result-meta">
         <span>{formatNumber(row.candidate_value)}</span>
         <span>{row.metric_label}</span>
-        <span>Nearest {row.nearest_match.name}</span>
+        <span>
+          Nearest {row.nearest_match.name}
+          {row.nearest_match.population != null ? ` · Population ${formatNumber(row.nearest_match.population)}` : ""}
+        </span>
         <span>
           {formatNumber(row.distance)} {row.distance_unit}
         </span>
@@ -235,13 +241,21 @@ export function ResultsTable({
                       >
                         <td>
                           <strong>{row.candidate.name}</strong>
-                          <div className="table-subline">{friendlySumlevel(row.candidate.sumlevel)}</div>
+                          <div className="table-subline">
+                            {friendlySumlevel(row.candidate.sumlevel)}
+                            {row.candidate.population != null ? ` · Population ${formatNumber(row.candidate.population)}` : ""}
+                          </div>
                         </td>
                         <td>
                           <strong>{formatNumber(row.candidate_value)}</strong>
                           <div className="table-subline">{row.metric_label}</div>
                         </td>
-                        <td>{row.nearest_match.name}</td>
+                        <td>
+                          <strong>{row.nearest_match.name}</strong>
+                          <div className="table-subline">
+                            {row.nearest_match.population != null ? `Population ${formatNumber(row.nearest_match.population)}` : ""}
+                          </div>
+                        </td>
                         <td>
                           {formatNumber(row.distance)} {row.distance_unit}
                         </td>

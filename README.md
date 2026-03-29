@@ -163,6 +163,7 @@ See:
 - Ranking supports states, counties, places, census tracts, ZCTAs, urban areas, and metro areas.
 - Remoteness uses the same geography scope list and population-threshold filters as ranking.
 - Remoteness also supports optional county population minimum, county density minimum, one-per-county limiting, and kilometer distance display.
+- Remoteness results now show population context for both the candidate and the nearest match.
 - Ranking and nearest share the same population-threshold filter presets plus a custom filter path.
 - Mobile layouts now use intentionally simplified states for forms and results, including card-style result rows instead of compressed tables where that improves readability.
 - The footer `Sources` link shows the built-in GeoCompare source list from the backend.
