@@ -72,6 +72,12 @@ export type SourcesResponse = {
   results: SourceRow[];
 };
 
+export type MapLinksResponse = {
+  google_maps_url: string;
+  google_street_view_url: string;
+  google_street_view_point_source?: string | null;
+};
+
 export type GeoResolveGeography = {
   kind: string;
   name: string | null;

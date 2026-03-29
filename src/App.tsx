@@ -560,7 +560,7 @@ export default function App() {
                   <p>Base path: <code>{config.baseUrl}</code></p>
                 </div>
                 <p className="source-notes">
-                  GET endpoints currently include <code>/search</code>, <code>/profile</code>, <code>/sources</code>, <code>/resolve</code>, <code>/nearest</code>, <code>/top</code>, <code>/bottom</code>, <code>/remoteness</code>, and <code>/local-average</code>.
+                  GET endpoints currently include <code>/search</code>, <code>/profile</code>, <code>/map-links</code>, <code>/sources</code>, <code>/resolve</code>, <code>/nearest</code>, <code>/top</code>, <code>/bottom</code>, <code>/remoteness</code>, and <code>/local-average</code>.
                 </p>
                 <p className="source-link-row">
                   <span className="source-link-label">GitHub:</span>{" "}

@@ -11,6 +11,7 @@ import type {
   ResolveResponse,
   SearchParams,
   SearchResponse,
+  MapLinksResponse,
   SourcesResponse,
 } from "./types";
 
@@ -26,7 +27,8 @@ type RequestTimeoutName =
   | "bottom"
   | "nearest"
   | "georesolve"
-  | "sources";
+  | "sources"
+  | "mapLinks";
 
 const REQUEST_TIMEOUT_MS: Record<RequestTimeoutName, number> = {
   health: 10_000,
@@ -40,6 +42,7 @@ const REQUEST_TIMEOUT_MS: Record<RequestTimeoutName, number> = {
   nearest: 20_000,
   georesolve: 20_000,
   sources: 10_000,
+  mapLinks: 20_000,
 };
 
 function withTrailingSlashRemoved(value: string) {
@@ -210,5 +213,9 @@ export class GeoCompareApi {
 
   sources() {
     return this.request<SourcesResponse>(this.baseUrl, "/sources", {}, "sources");
+  }
+
+  mapLinks(params: { name?: string; geoid?: string }) {
+    return this.request<MapLinksResponse>(this.baseUrl, "/map-links", params, "mapLinks");
   }
 }

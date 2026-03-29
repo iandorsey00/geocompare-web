@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import L from "leaflet";
+import { GeoCompareApi } from "../lib/api";
 import { fetchBoundary, googleMapsUrl, randomStreetViewUrl } from "../lib/boundaries";
 import type { GeographyProfile } from "../lib/types";
 import { SectionCard } from "./SectionCard";
@@ -20,10 +21,19 @@ export function MapPanel({ profile }: MapPanelProps) {
   const [status, setStatus] = useState("Loading boundary...");
   const [boundary, setBoundary] = useState<GeoJSON.FeatureCollection<GeoJSON.Geometry> | null>(null);
   const [isGeneratingStreetView, setIsGeneratingStreetView] = useState(false);
+  const [googleHref, setGoogleHref] = useState(() => googleMapsUrl(profile));
+  const [streetViewHref, setStreetViewHref] = useState<string | null>(null);
   const [isDarkMode, setIsDarkMode] = useState(() =>
     window.matchMedia("(prefers-color-scheme: dark)").matches,
   );
-  const googleHref = useMemo(() => googleMapsUrl(profile), [profile]);
+  const api = useMemo(
+    () =>
+      new GeoCompareApi({
+        baseUrl: import.meta.env.VITE_GEOCOMPARE_API_BASE_URL ?? "/api",
+        georesolveBaseUrl: import.meta.env.VITE_GEORESOLVE_API_BASE_URL ?? "/georesolve-api",
+      }),
+    [],
+  );
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
@@ -51,6 +61,35 @@ export function MapPanel({ profile }: MapPanelProps) {
       cancelled = true;
     };
   }, [profile]);
+
+  useEffect(() => {
+    let cancelled = false;
+    setGoogleHref(googleMapsUrl(profile));
+    setStreetViewHref(null);
+
+    void (async () => {
+      try {
+        const links = await api.mapLinks({
+          geoid: profile.geoid || undefined,
+          name: profile.geoid ? undefined : profile.display_name || profile.name,
+        });
+        if (cancelled) {
+          return;
+        }
+        setGoogleHref(links.google_maps_url);
+        setStreetViewHref(links.google_street_view_url);
+      } catch {
+        if (cancelled) {
+          return;
+        }
+        setGoogleHref(googleMapsUrl(profile));
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [api, profile]);
 
   useEffect(() => {
     if (!mapRef.current || !boundary) {
@@ -87,7 +126,7 @@ export function MapPanel({ profile }: MapPanelProps) {
   async function openRandomStreetView() {
     setIsGeneratingStreetView(true);
     try {
-      const nextUrl = await randomStreetViewUrl(profile, boundary);
+      const nextUrl = streetViewHref ?? (await randomStreetViewUrl(profile, boundary));
       window.open(nextUrl, "_blank", "noopener,noreferrer");
     } finally {
       setIsGeneratingStreetView(false);
