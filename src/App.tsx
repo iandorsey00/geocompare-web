@@ -173,6 +173,38 @@ export default function App() {
     return null;
   }
 
+  async function hydrateSimilarityRows(rows: SimilarityRow[]) {
+    const hydrated = await Promise.all(
+      rows.map(async (row) => {
+        if (row.geography.population !== null && typeof row.geography.population !== "undefined") {
+          return row;
+        }
+
+        const nextProfile = await loadProfileForSummary(row.geography);
+        if (!nextProfile) {
+          return row;
+        }
+
+        return {
+          ...row,
+          geography: {
+            name: nextProfile.name,
+            display_name: nextProfile.display_name,
+            canonical_name: nextProfile.canonical_name,
+            sumlevel: nextProfile.sumlevel,
+            state: nextProfile.state,
+            geoid: nextProfile.geoid,
+            population: nextProfile.metrics.population ?? row.geography.population ?? null,
+            counties: nextProfile.counties,
+            counties_display: nextProfile.counties_display,
+          },
+        };
+      }),
+    );
+
+    return hydrated;
+  }
+
   async function handleAddCompare(summary: GeographySummary) {
     if (summary.geoid && compareProfiles.some((profileItem) => profileItem.geoid === summary.geoid)) {
       return;
@@ -553,10 +585,11 @@ export default function App() {
                                   n,
                                   official_labels: officialLabels,
                                 });
-                          setSimilarRows(response.results);
+                          const hydratedRows = await hydrateSimilarityRows(response.results);
+                          setSimilarRows(hydratedRows);
                           setSimilarStatus(
-                            response.results.length > 0
-                              ? `Showing ${response.results.length} ${
+                            hydratedRows.length > 0
+                              ? `Showing ${hydratedRows.length} ${
                                   mode === "similar-form" ? "built-form" : "demographically"
                                 } similar geographies.`
                               : "No similar geographies matched that query.",

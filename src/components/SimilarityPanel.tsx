@@ -95,7 +95,7 @@ export function SimilarityPanel({
                 : universeMode === "all"
                   ? "All"
                   : undefined,
-            inState: groupMode === "state" || groupMode === "county" ? stateValue.toLowerCase() : undefined,
+            inState: groupMode === "state" ? stateValue.toLowerCase() : undefined,
             inCounty: groupMode === "county" ? countyValue : undefined,
             inZcta: groupMode === "zcta" ? zctaValue.trim() : undefined,
             n: count,
@@ -199,7 +199,7 @@ export function SimilarityPanel({
         ) : null}
         {showAdvanced && (groupMode === "state" || groupMode === "county") ? (
           <label>
-            <span>State</span>
+            <span>{groupMode === "county" ? "County state" : "State"}</span>
             <select
               value={stateValue}
               onChange={(event) => {
