@@ -8,6 +8,7 @@ Web frontend for exploring GeoCompare and GeoResolve.
 - open demographic profiles
 - compare multiple geographies
 - run ranking queries
+- run remoteness queries
 - run nearest-geography queries
 - resolve addresses, coordinates, coordinate-bearing map URLs, and current location through GeoResolve
 - show boundaries on a map for supported geographies
@@ -15,7 +16,7 @@ Web frontend for exploring GeoCompare and GeoResolve.
 
 The frontend treats both backends as external services:
 
-- `GeoCompare` for profiles, ranking, nearest, and search
+- `GeoCompare` for profiles, ranking, remoteness, nearest, and search
 - `GeoResolve` for address-to-geography resolution
 
 ## Stack
@@ -160,6 +161,7 @@ See:
 - Compare currently stays table-first; maps are shown on single-profile views only.
 - Profile map actions prefer GeoCompare's backend-generated Google Maps and Street View links, with a local compatibility fallback if `/map-links` is not yet live.
 - Ranking supports states, counties, places, census tracts, ZCTAs, urban areas, and metro areas.
+- Remoteness uses the same geography scope list and population-threshold filters as ranking.
 - Ranking and nearest share the same population-threshold filter presets plus a custom filter path.
 - Mobile layouts now use intentionally simplified states for forms and results, including card-style result rows instead of compressed tables where that improves readability.
 - The footer `Sources` link shows the built-in GeoCompare source list from the backend.

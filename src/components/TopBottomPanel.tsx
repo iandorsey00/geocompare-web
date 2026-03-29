@@ -2,9 +2,10 @@ import { useMemo, useState } from "react";
 import { GeoCompareApi } from "../lib/api";
 import { formatMetricValue } from "../lib/format";
 import { countiesByState, stateOptions } from "../lib/geo-options";
-import type { ApiConfig, GeographyProfile, NearestRow, RankingRow, SearchSelection } from "../lib/types";
+import type { ApiConfig, GeographyProfile, NearestRow, RankingRow, RemotenessRow, SelectedRow } from "../lib/types";
 import { DetailPanel } from "./DetailPanel";
 import { NearestPanel } from "./NearestPanel";
+import { ResultsTable } from "./ResultsTable";
 import { SectionCard } from "./SectionCard";
 
 type TopBottomPanelProps = {
@@ -13,6 +14,8 @@ type TopBottomPanelProps = {
   onAddCompareProfile: (profile: GeographyProfile) => void;
   onBack: () => void;
 };
+
+type QueryMode = "ranking" | "remoteness";
 
 type RankingFormState = {
   direction: "top" | "bottom";
@@ -115,11 +118,15 @@ function buildScope(form: RankingFormState) {
 }
 
 export function TopBottomPanel({ config, comparedGeoids, onAddCompareProfile, onBack }: TopBottomPanelProps) {
+  const [mode, setMode] = useState<QueryMode>("ranking");
   const [form, setForm] = useState<RankingFormState>(initialState);
+  const [remotenessThreshold, setRemotenessThreshold] = useState("100000");
+  const [remotenessTarget, setRemotenessTarget] = useState<"below" | "above">("below");
   const [rows, setRows] = useState<RankingRow[]>([]);
+  const [remotenessRows, setRemotenessRows] = useState<RemotenessRow[]>([]);
   const [resultMetricLabel, setResultMetricLabel] = useState("");
-  const [feedback, setFeedback] = useState("Choose a metric and scope to start a ranking.");
-  const [selected, setSelected] = useState<SearchSelection | null>(null);
+  const [feedback, setFeedback] = useState("Choose a metric and scope to start exploring.");
+  const [selected, setSelected] = useState<SelectedRow | null>(null);
   const [profile, setProfile] = useState<GeographyProfile | null>(null);
   const [nearestRows, setNearestRows] = useState<NearestRow[]>([]);
   const [nearestStatus, setNearestStatus] = useState("");
@@ -179,6 +186,7 @@ export function TopBottomPanel({ config, comparedGeoids, onAddCompareProfile, on
     setProfile(null);
     setNearestRows([]);
     setNearestStatus("");
+    setRemotenessRows([]);
     setView("results");
 
     const scope = buildScope(form);
@@ -215,7 +223,67 @@ export function TopBottomPanel({ config, comparedGeoids, onAddCompareProfile, on
     }
   }
 
-  async function openProfileFromSummary(summary: RankingRow["geography"] | NearestRow["geography"]) {
+  async function runRemoteness() {
+    if (!remotenessThreshold.trim()) {
+      setFeedback("Enter a threshold to run a remoteness query.");
+      return;
+    }
+
+    if (form.areaMode === "state" && !form.stateValue) {
+      setFeedback("Choose a state to run a state-scoped remoteness query.");
+      return;
+    }
+
+    if (form.areaMode === "county" && (!form.stateValue || !form.countyValue)) {
+      setFeedback("Choose a valid state and county to run a county-scoped remoteness query.");
+      return;
+    }
+
+    if (form.areaMode === "zctaPrefix" && !form.zctaPrefixValue.trim()) {
+      setFeedback("Enter a ZIP prefix to run a ZIP-prefixed ZCTA remoteness query.");
+      return;
+    }
+
+    setIsRunning(true);
+    setFeedback("Loading remoteness results...");
+    setSelected(null);
+    setProfile(null);
+    setRows([]);
+    setNearestRows([]);
+    setNearestStatus("");
+    setView("results");
+
+    const scope = buildScope(form);
+
+    try {
+      const response = await api.remoteness({
+        data_identifier: form.dataIdentifier,
+        threshold: remotenessThreshold.trim(),
+        target: remotenessTarget,
+        scope,
+        where: effectiveWhere,
+        n: form.n,
+        official_labels: form.officialLabels,
+        one_per_county: false,
+        kilometers: false,
+      });
+
+      setRemotenessRows(response.results);
+      setResultMetricLabel(response.results[0]?.metric_label ?? "");
+      setFeedback(
+        response.results.length > 0
+          ? `Showing ${response.count} most remote geographies ${remotenessTarget} the ${response.results[0]?.metric_label ?? "selected metric"} threshold.`
+          : "No geographies matched that remoteness query.",
+      );
+    } catch (error) {
+      setRemotenessRows([]);
+      setFeedback(error instanceof Error ? error.message : "Remoteness request failed.");
+    } finally {
+      setIsRunning(false);
+    }
+  }
+
+  async function openProfileFromSummary(summary: RankingRow["geography"] | NearestRow["geography"] | RemotenessRow["candidate"]) {
     const attempts = [summary.display_name, summary.name, summary.canonical_name].filter(
       (value, index, values) => Boolean(value) && values.indexOf(value) === index,
     );
@@ -259,36 +327,71 @@ export function TopBottomPanel({ config, comparedGeoids, onAddCompareProfile, on
     <div className="top-bottom-shell">
       <SectionCard
         eyebrow="Ranking"
-        title="Rank geographies"
-        subtitle="Use ranking mode to explore highest or lowest values, then open any geography as a profile."
+        title={mode === "ranking" ? "Rank geographies" : "Find remote geographies"}
+        subtitle={
+          mode === "ranking"
+            ? "Use ranking mode to explore highest or lowest values, then open any geography as a profile."
+            : "Find geographies furthest from the nearest match above or below a threshold."
+        }
         actions={
-          <button className="secondary-button" onClick={onBack} type="button">
-            Back to search
-          </button>
+          <div className="panel-action-links">
+            <div className="action-links" aria-label="Explore modes">
+              <button
+                className={`surface-link${mode === "ranking" ? " is-active" : ""}`}
+                onClick={() => setMode("ranking")}
+                type="button"
+              >
+                Ranking
+              </button>
+              <button
+                className={`surface-link${mode === "remoteness" ? " is-active" : ""}`}
+                onClick={() => setMode("remoteness")}
+                type="button"
+              >
+                Remoteness
+              </button>
+            </div>
+            <button className="secondary-button" onClick={onBack} type="button">
+              Back to search
+            </button>
+          </div>
         }
       >
         <form
           className="ranking-form"
           onSubmit={(event) => {
             event.preventDefault();
-            void runRanking();
+            void (mode === "ranking" ? runRanking() : runRemoteness());
           }}
         >
-          <label>
-            <span>Direction</span>
-            <select
-              value={form.direction}
-              onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  direction: event.target.value as RankingFormState["direction"],
-                }))
-              }
-            >
-              <option value="top">Top</option>
-              <option value="bottom">Bottom</option>
-            </select>
-          </label>
+          {mode === "ranking" ? (
+            <label>
+              <span>Direction</span>
+              <select
+                value={form.direction}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    direction: event.target.value as RankingFormState["direction"],
+                  }))
+                }
+              >
+                <option value="top">Top</option>
+                <option value="bottom">Bottom</option>
+              </select>
+            </label>
+          ) : (
+            <label>
+              <span>Target side</span>
+              <select
+                value={remotenessTarget}
+                onChange={(event) => setRemotenessTarget(event.target.value as "below" | "above")}
+              >
+                <option value="below">Below threshold</option>
+                <option value="above">Above threshold</option>
+              </select>
+            </label>
+          )}
           <label>
             <span>Metric</span>
             <select
@@ -307,6 +410,16 @@ export function TopBottomPanel({ config, comparedGeoids, onAddCompareProfile, on
               ))}
             </select>
           </label>
+          {mode === "remoteness" ? (
+            <label>
+              <span>Threshold</span>
+              <input
+                placeholder="100000"
+                value={remotenessThreshold}
+                onChange={(event) => setRemotenessThreshold(event.target.value)}
+              />
+            </label>
+          ) : null}
           <label>
             <span>Geography</span>
             <select
@@ -495,55 +608,72 @@ export function TopBottomPanel({ config, comparedGeoids, onAddCompareProfile, on
           </label>
           <div className="ranking-actions">
             <button className="primary-button" disabled={isRunning} type="submit">
-              {isRunning ? "Loading..." : "Run ranking"}
+              {isRunning ? "Loading..." : mode === "ranking" ? "Run ranking" : "Run remoteness"}
             </button>
           </div>
         </form>
       </SectionCard>
 
       {view === "results" ? (
-        <SectionCard eyebrow="" title="" subtitle="">
-          <div className="plain-state">
-            <p>{feedback}</p>
-          </div>
-          {rows.length > 0 ? (
-            <div className="ranking-results">
-              <p className="section-label">Results</p>
-              <div className="metrics-list">
-                {rows.map((row, index) => {
-                  const countyLabel = row.geography.counties_display.join(", ");
-                  const populationValue =
-                    row.geography.population !== null && typeof row.geography.population !== "undefined"
-                      ? formatMetricValue("population", row.geography.population)
-                      : "";
-
-                  return (
-                    <button
-                      className="ranking-row"
-                      key={`${row.geography.geoid ?? row.geography.name}-${index}`}
-                      onClick={() => {
-                        void openProfileFromSummary(row.geography);
-                      }}
-                      type="button"
-                    >
-                      <span className="ranking-rank">{index + 1}</span>
-                      <strong className="ranking-name">{row.geography.name}</strong>
-                      <span className="ranking-population-value">
-                        {populationValue || "—"}
-                      </span>
-                      <strong className="ranking-metric-value">
-                        {formatMetricValue(form.dataIdentifier, row.metric_value)}
-                      </strong>
-                      <span className="ranking-county">{countyLabel || row.geography.canonical_name}</span>
-                      <span className="ranking-population-label">Population</span>
-                      <span className="ranking-metric-label">{resultMetricLabel || row.metric_label}</span>
-                    </button>
-                  );
-                })}
-              </div>
+        mode === "ranking" ? (
+          <SectionCard eyebrow="" title="" subtitle="">
+            <div className="plain-state">
+              <p>{feedback}</p>
             </div>
-          ) : null}
-        </SectionCard>
+            {rows.length > 0 ? (
+              <div className="ranking-results">
+                <p className="section-label">Results</p>
+                <div className="metrics-list">
+                  {rows.map((row, index) => {
+                    const countyLabel = row.geography.counties_display.join(", ");
+                    const populationValue =
+                      row.geography.population !== null && typeof row.geography.population !== "undefined"
+                        ? formatMetricValue("population", row.geography.population)
+                        : "";
+
+                    return (
+                      <button
+                        className="ranking-row"
+                        key={`${row.geography.geoid ?? row.geography.name}-${index}`}
+                        onClick={() => {
+                          void openProfileFromSummary(row.geography);
+                        }}
+                        type="button"
+                      >
+                        <span className="ranking-rank">{index + 1}</span>
+                        <strong className="ranking-name">{row.geography.name}</strong>
+                        <span className="ranking-population-value">
+                          {populationValue || "—"}
+                        </span>
+                        <strong className="ranking-metric-value">
+                          {formatMetricValue(form.dataIdentifier, row.metric_value)}
+                        </strong>
+                        <span className="ranking-county">{countyLabel || row.geography.canonical_name}</span>
+                        <span className="ranking-population-label">Population</span>
+                        <span className="ranking-metric-label">{resultMetricLabel || row.metric_label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : null}
+          </SectionCard>
+        ) : (
+          <ResultsTable
+            resultKind="remoteness"
+            rows={remotenessRows}
+            selected={selected}
+            onSelect={(nextSelection) => {
+              setSelected(nextSelection);
+              setView("profile");
+              if (nextSelection.kind === "remoteness") {
+                void openProfileFromSummary(nextSelection.item.candidate);
+              }
+            }}
+            title=""
+            subtitle={feedback}
+          />
+        )
       ) : (
         <div className="profile-view">
           <button
@@ -555,7 +685,7 @@ export function TopBottomPanel({ config, comparedGeoids, onAddCompareProfile, on
             }}
             type="button"
           >
-            Back to ranking results
+            Back to {mode === "ranking" ? "ranking" : "remoteness"} results
           </button>
           <DetailPanel
             selected={selected}
