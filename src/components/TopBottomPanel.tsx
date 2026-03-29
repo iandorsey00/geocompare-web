@@ -31,6 +31,15 @@ type RankingFormState = {
   officialLabels: boolean;
 };
 
+function parseOptionalNumber(value: string) {
+  if (!value.trim()) {
+    return undefined;
+  }
+
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
+
 const METRIC_OPTIONS = [
   { value: "median_household_income", label: "Median household income" },
   { value: "per_capita_income", label: "Per capita income" },
@@ -122,6 +131,10 @@ export function TopBottomPanel({ config, comparedGeoids, onAddCompareProfile, on
   const [form, setForm] = useState<RankingFormState>(initialState);
   const [remotenessThreshold, setRemotenessThreshold] = useState("100000");
   const [remotenessTarget, setRemotenessTarget] = useState<"below" | "above">("below");
+  const [remotenessCountyPopulationMin, setRemotenessCountyPopulationMin] = useState("");
+  const [remotenessCountyDensityMin, setRemotenessCountyDensityMin] = useState("");
+  const [remotenessOnePerCounty, setRemotenessOnePerCounty] = useState(false);
+  const [remotenessKilometers, setRemotenessKilometers] = useState(false);
   const [rows, setRows] = useState<RankingRow[]>([]);
   const [remotenessRows, setRemotenessRows] = useState<RemotenessRow[]>([]);
   const [resultMetricLabel, setResultMetricLabel] = useState("");
@@ -263,9 +276,11 @@ export function TopBottomPanel({ config, comparedGeoids, onAddCompareProfile, on
         scope,
         where: effectiveWhere,
         n: form.n,
+        county_population_min: parseOptionalNumber(remotenessCountyPopulationMin),
+        county_density_min: parseOptionalNumber(remotenessCountyDensityMin),
         official_labels: form.officialLabels,
-        one_per_county: false,
-        kilometers: false,
+        one_per_county: remotenessOnePerCounty,
+        kilometers: remotenessKilometers,
       });
 
       setRemotenessRows(response.results);
@@ -578,6 +593,28 @@ export function TopBottomPanel({ config, comparedGeoids, onAddCompareProfile, on
               ))}
             </select>
           </label>
+          {mode === "remoteness" ? (
+            <label>
+              <span>Min county population</span>
+              <input
+                inputMode="numeric"
+                placeholder="Optional"
+                value={remotenessCountyPopulationMin}
+                onChange={(event) => setRemotenessCountyPopulationMin(event.target.value.replace(/[^\d]/g, ""))}
+              />
+            </label>
+          ) : null}
+          {mode === "remoteness" ? (
+            <label>
+              <span>Min county density</span>
+              <input
+                inputMode="decimal"
+                placeholder="Optional"
+                value={remotenessCountyDensityMin}
+                onChange={(event) => setRemotenessCountyDensityMin(event.target.value.replace(/[^0-9.]/g, ""))}
+              />
+            </label>
+          ) : null}
           {form.wherePreset === "__custom__" ? (
             <label className="ranking-form-wide">
               <span>Custom filter</span>
@@ -591,6 +628,26 @@ export function TopBottomPanel({ config, comparedGeoids, onAddCompareProfile, on
                   }))
                 }
               />
+            </label>
+          ) : null}
+          {mode === "remoteness" ? (
+            <label className="inline-toggle">
+              <input
+                type="checkbox"
+                checked={remotenessOnePerCounty}
+                onChange={(event) => setRemotenessOnePerCounty(event.target.checked)}
+              />
+              <span>One result per county</span>
+            </label>
+          ) : null}
+          {mode === "remoteness" ? (
+            <label className="inline-toggle">
+              <input
+                type="checkbox"
+                checked={remotenessKilometers}
+                onChange={(event) => setRemotenessKilometers(event.target.checked)}
+              />
+              <span>Show distance in kilometers</span>
             </label>
           ) : null}
           <label className="inline-toggle">

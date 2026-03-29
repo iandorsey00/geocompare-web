@@ -87,9 +87,8 @@ function renderRemotenessCard(row: RemotenessRow, selected: SelectedRow | null, 
         <p>{friendlySumlevel(row.candidate.sumlevel)}</p>
       </div>
       <div className="mobile-result-meta">
-        <span>
-          {formatNumber(row.candidate_value)} · {row.metric_label}
-        </span>
+        <span>{formatNumber(row.candidate_value)}</span>
+        <span>{row.metric_label}</span>
         <span>Nearest {row.nearest_match.name}</span>
         <span>
           {formatNumber(row.distance)} {row.distance_unit}
@@ -239,8 +238,8 @@ export function ResultsTable({
                           <div className="table-subline">{friendlySumlevel(row.candidate.sumlevel)}</div>
                         </td>
                         <td>
-                          {formatNumber(row.candidate_value)}{" "}
-                          <span className="muted">({row.metric_label})</span>
+                          <strong>{formatNumber(row.candidate_value)}</strong>
+                          <div className="table-subline">{row.metric_label}</div>
                         </td>
                         <td>{row.nearest_match.name}</td>
                         <td>
