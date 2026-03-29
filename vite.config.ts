@@ -8,8 +8,25 @@ function readGeoresolveVersion() {
   try {
     const pyprojectPath = resolve(process.cwd(), "../georesolve/pyproject.toml");
     const content = readFileSync(pyprojectPath, "utf8");
-    const match = content.match(/^version\s*=\s*"([^"]+)"/m);
-    return match?.[1] ?? "unknown";
+    const directMatch = content.match(/^version\s*=\s*"([^"]+)"/m);
+    if (directMatch?.[1]) {
+      return directMatch[1];
+    }
+
+    const attrMatch = content.match(/^version\s*=\s*\{\s*attr\s*=\s*"([^"]+)"\s*\}/m);
+    if (!attrMatch?.[1]) {
+      return "unknown";
+    }
+
+    const [moduleName, exportName] = attrMatch[1].split(".");
+    if (!moduleName || !exportName) {
+      return "unknown";
+    }
+
+    const modulePath = resolve(process.cwd(), `../georesolve/${moduleName}/__init__.py`);
+    const moduleContent = readFileSync(modulePath, "utf8");
+    const exportPattern = new RegExp(`${exportName}\\s*=\\s*"([^"]+)"`);
+    return moduleContent.match(exportPattern)?.[1] ?? "unknown";
   } catch {
     return "unknown";
   }
