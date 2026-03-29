@@ -128,6 +128,7 @@ function buildScope(form: RankingFormState) {
 
 export function TopBottomPanel({ config, comparedGeoids, onAddCompareProfile, onBack }: TopBottomPanelProps) {
   const [mode, setMode] = useState<QueryMode>("ranking");
+  const [showAdvancedRemoteness, setShowAdvancedRemoteness] = useState(false);
   const [form, setForm] = useState<RankingFormState>(initialState);
   const [remotenessThreshold, setRemotenessThreshold] = useState("100000");
   const [remotenessTarget, setRemotenessTarget] = useState<"below" | "above">("below");
@@ -593,28 +594,6 @@ export function TopBottomPanel({ config, comparedGeoids, onAddCompareProfile, on
               ))}
             </select>
           </label>
-          {mode === "remoteness" ? (
-            <label>
-              <span>Min county population</span>
-              <input
-                inputMode="numeric"
-                placeholder="Optional"
-                value={remotenessCountyPopulationMin}
-                onChange={(event) => setRemotenessCountyPopulationMin(event.target.value.replace(/[^\d]/g, ""))}
-              />
-            </label>
-          ) : null}
-          {mode === "remoteness" ? (
-            <label>
-              <span>Min county density</span>
-              <input
-                inputMode="decimal"
-                placeholder="Optional"
-                value={remotenessCountyDensityMin}
-                onChange={(event) => setRemotenessCountyDensityMin(event.target.value.replace(/[^0-9.]/g, ""))}
-              />
-            </label>
-          ) : null}
           {form.wherePreset === "__custom__" ? (
             <label className="ranking-form-wide">
               <span>Custom filter</span>
@@ -631,6 +610,37 @@ export function TopBottomPanel({ config, comparedGeoids, onAddCompareProfile, on
             </label>
           ) : null}
           {mode === "remoteness" ? (
+            <button
+              className="text-link search-advanced-toggle"
+              onClick={() => setShowAdvancedRemoteness((current) => !current)}
+              type="button"
+            >
+              {showAdvancedRemoteness ? "Hide advanced" : "Advanced"}
+            </button>
+          ) : null}
+          {mode === "remoteness" && showAdvancedRemoteness ? (
+            <label>
+              <span>Min county population</span>
+              <input
+                inputMode="numeric"
+                placeholder="Optional"
+                value={remotenessCountyPopulationMin}
+                onChange={(event) => setRemotenessCountyPopulationMin(event.target.value.replace(/[^\d]/g, ""))}
+              />
+            </label>
+          ) : null}
+          {mode === "remoteness" && showAdvancedRemoteness ? (
+            <label>
+              <span>Min county density</span>
+              <input
+                inputMode="decimal"
+                placeholder="Optional"
+                value={remotenessCountyDensityMin}
+                onChange={(event) => setRemotenessCountyDensityMin(event.target.value.replace(/[^0-9.]/g, ""))}
+              />
+            </label>
+          ) : null}
+          {mode === "remoteness" && showAdvancedRemoteness ? (
             <label className="inline-toggle">
               <input
                 type="checkbox"
@@ -640,7 +650,7 @@ export function TopBottomPanel({ config, comparedGeoids, onAddCompareProfile, on
               <span>One result per county</span>
             </label>
           ) : null}
-          {mode === "remoteness" ? (
+          {mode === "remoteness" && showAdvancedRemoteness ? (
             <label className="inline-toggle">
               <input
                 type="checkbox"
