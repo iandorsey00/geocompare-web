@@ -2,11 +2,20 @@ import { useMemo, useState } from "react";
 import { GeoCompareApi } from "../lib/api";
 import { formatMetricValue } from "../lib/format";
 import { countiesByState, stateOptions } from "../lib/geo-options";
-import type { ApiConfig, GeographyProfile, NearestRow, RankingRow, RemotenessRow, SelectedRow } from "../lib/types";
+import type {
+  ApiConfig,
+  GeographyProfile,
+  NearestRow,
+  RankingRow,
+  RemotenessRow,
+  SelectedRow,
+  SimilarityRow,
+} from "../lib/types";
 import { DetailPanel } from "./DetailPanel";
 import { NearestPanel } from "./NearestPanel";
 import { ResultsTable } from "./ResultsTable";
 import { SectionCard } from "./SectionCard";
+import { SimilarityPanel } from "./SimilarityPanel";
 
 type TopBottomPanelProps = {
   config: ApiConfig;
@@ -32,11 +41,13 @@ type RankingFormState = {
 };
 
 function parseOptionalNumber(value: string) {
-  if (!value.trim()) {
+  const normalized = value.replace(/,/g, "").trim();
+
+  if (!normalized) {
     return undefined;
   }
 
-  const parsed = Number(value);
+  const parsed = Number(normalized);
   return Number.isFinite(parsed) ? parsed : undefined;
 }
 
@@ -144,10 +155,13 @@ export function TopBottomPanel({ config, comparedGeoids, onAddCompareProfile, on
   const [profile, setProfile] = useState<GeographyProfile | null>(null);
   const [nearestRows, setNearestRows] = useState<NearestRow[]>([]);
   const [nearestStatus, setNearestStatus] = useState("");
+  const [similarRows, setSimilarRows] = useState<SimilarityRow[]>([]);
+  const [similarStatus, setSimilarStatus] = useState("");
   const [view, setView] = useState<"results" | "profile">("results");
   const [isRunning, setIsRunning] = useState(false);
   const [isLoadingProfile, setIsLoadingProfile] = useState(false);
   const [isLoadingNearest, setIsLoadingNearest] = useState(false);
+  const [isLoadingSimilar, setIsLoadingSimilar] = useState(false);
 
   const api = useMemo(() => new GeoCompareApi(config), [config]);
   const effectiveWhere = form.wherePreset === "__custom__" ? form.customWhere.trim() : form.wherePreset;
@@ -309,6 +323,8 @@ export function TopBottomPanel({ config, comparedGeoids, onAddCompareProfile, on
     setProfile(null);
     setNearestRows([]);
     setNearestStatus("");
+    setSimilarRows([]);
+    setSimilarStatus("");
     setView("profile");
 
     if (summary.geoid) {
@@ -625,7 +641,9 @@ export function TopBottomPanel({ config, comparedGeoids, onAddCompareProfile, on
                 inputMode="numeric"
                 placeholder="Optional"
                 value={remotenessCountyPopulationMin}
-                onChange={(event) => setRemotenessCountyPopulationMin(event.target.value.replace(/[^\d]/g, ""))}
+                onChange={(event) =>
+                  setRemotenessCountyPopulationMin(event.target.value.replace(/[^\d,]/g, ""))
+                }
               />
             </label>
           ) : null}
@@ -636,7 +654,9 @@ export function TopBottomPanel({ config, comparedGeoids, onAddCompareProfile, on
                 inputMode="decimal"
                 placeholder="Optional"
                 value={remotenessCountyDensityMin}
-                onChange={(event) => setRemotenessCountyDensityMin(event.target.value.replace(/[^0-9.]/g, ""))}
+                onChange={(event) =>
+                  setRemotenessCountyDensityMin(event.target.value.replace(/[^0-9.,]/g, ""))
+                }
               />
             </label>
           ) : null}
@@ -797,6 +817,61 @@ export function TopBottomPanel({ config, comparedGeoids, onAddCompareProfile, on
                     setNearestStatus(error instanceof Error ? error.message : "Nearest request failed.");
                   } finally {
                     setIsLoadingNearest(false);
+                  }
+                })();
+              }}
+              onOpen={(row) => {
+                void openProfileFromSummary(row.geography);
+              }}
+            />
+          ) : null}
+          {profile ? (
+            <SimilarityPanel
+              profile={profile}
+              rows={similarRows}
+              isLoading={isLoadingSimilar}
+              statusText={similarStatus}
+              officialLabels={form.officialLabels}
+              onRun={({ mode: similarityMode, universe, universes, n, officialLabels }) => {
+                void (async () => {
+                  setIsLoadingSimilar(true);
+                  setSimilarStatus("Finding similar geographies...");
+                  try {
+                    const response =
+                      similarityMode === "similar-form"
+                        ? await api.similarForm({
+                            name: profile.display_name,
+                            universe,
+                            universes,
+                            n,
+                            official_labels: officialLabels,
+                          })
+                        : await api.similar({
+                            name: profile.display_name,
+                            universe,
+                            universes,
+                            n,
+                            official_labels: officialLabels,
+                          });
+                    setSimilarRows(response.results);
+                    setSimilarStatus(
+                      response.results.length > 0
+                        ? `Showing ${response.results.length} ${
+                            similarityMode === "similar-form" ? "built-form" : "demographically"
+                          } similar geographies.`
+                        : "No similar geographies matched that query.",
+                    );
+                  } catch (error) {
+                    const message =
+                      error instanceof Error ? error.message : "Similarity request failed.";
+                    setFeedback(message);
+                    setSimilarStatus(
+                      message.includes("404")
+                        ? "Similarity support is not live on the backend yet."
+                        : message,
+                    );
+                  } finally {
+                    setIsLoadingSimilar(false);
                   }
                 })();
               }}

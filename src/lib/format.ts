@@ -114,6 +114,7 @@ export function friendlySumlevel(sumlevel: string | null) {
     "140": "Census tract",
     "160": "Place",
     "310": "CBSA",
+    "400": "Urban area",
     "860": "ZCTA",
   };
 

@@ -53,6 +53,20 @@ export type NearestResponse = {
   results: NearestRow[];
 };
 
+export type SimilarityMode = "similar" | "similar-form";
+
+export type SimilarityRow = {
+  geography: GeographySummary;
+  distance: number;
+};
+
+export type SimilarityResponse = {
+  query: string;
+  mode: SimilarityMode;
+  count: number;
+  results: SimilarityRow[];
+};
+
 export type ResolveResponse = {
   query: string;
   count: number;
@@ -177,6 +191,15 @@ export type LocalAverageParams = {
   one_per_county: boolean;
   official_labels: boolean;
   kilometers: boolean;
+};
+
+export type SimilarityParams = {
+  name: string;
+  universe?: string;
+  universes?: string;
+  where?: string;
+  n: number;
+  official_labels?: boolean;
 };
 
 export type ResultKind = "search" | "remoteness" | "local-average";

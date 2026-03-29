@@ -10,13 +10,14 @@ Web frontend for exploring GeoCompare and GeoResolve.
 - run ranking queries
 - run remoteness queries
 - run nearest-geography queries
+- run GeoVector similarity queries in demographic and built-form modes
 - resolve addresses, coordinates, coordinate-bearing map URLs, and current location through GeoResolve
 - show boundaries on a map for supported geographies
 - show built-in data sources through the app footer
 
 The frontend treats both backends as external services:
 
-- `GeoCompare` for profiles, ranking, remoteness, nearest, and search
+- `GeoCompare` for profiles, ranking, remoteness, nearest, search, and similarity
 - `GeoResolve` for address-to-geography resolution
 
 ## Stack
@@ -161,8 +162,10 @@ See:
 - Compare currently stays table-first; maps are shown on single-profile views only.
 - Profile map actions prefer GeoCompare's backend-generated Google Maps and Street View links, with a local compatibility fallback if `/map-links` is not yet live.
 - Ranking supports states, counties, places, census tracts, ZCTAs, urban areas, and metro areas.
+- Similarity supports peer-level defaults, one geography type, multiple geography types, and explicit `All` across states, counties, places, census tracts, ZCTAs, urban areas, and metro areas.
 - Remoteness uses the same geography scope list and population-threshold filters as ranking.
 - Remoteness keeps its core controls visible and hides optional county population minimum, county density minimum, one-per-county limiting, and kilometer distance display under Advanced.
+- Remoteness numeric text inputs now accept comma separators in line with GeoCompare's numeric flag parsing.
 - Remoteness results now show population context for both the candidate and the nearest match.
 - Ranking and nearest share the same population-threshold filter presets plus a custom filter path.
 - Mobile layouts now use intentionally simplified states for forms and results, including card-style result rows instead of compressed tables where that improves readability.

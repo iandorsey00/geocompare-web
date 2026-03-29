@@ -11,6 +11,8 @@ import type {
   ResolveResponse,
   SearchParams,
   SearchResponse,
+  SimilarityParams,
+  SimilarityResponse,
   MapLinksResponse,
   SourcesResponse,
 } from "./types";
@@ -26,6 +28,7 @@ type RequestTimeoutName =
   | "top"
   | "bottom"
   | "nearest"
+  | "similar"
   | "georesolve"
   | "sources"
   | "mapLinks";
@@ -40,6 +43,7 @@ const REQUEST_TIMEOUT_MS: Record<RequestTimeoutName, number> = {
   top: 20_000,
   bottom: 20_000,
   nearest: 20_000,
+  similar: 20_000,
   georesolve: 20_000,
   sources: 10_000,
   mapLinks: 20_000,
@@ -60,6 +64,51 @@ function buildQuery(params: Record<string, Primitive>) {
   }
 
   return searchParams.toString();
+}
+
+function normalizeSimilarityResponse(raw: unknown, defaultMode: "similar" | "similar-form"): SimilarityResponse {
+  const payload = typeof raw === "object" && raw !== null ? (raw as Record<string, unknown>) : {};
+  const rawResults = Array.isArray(payload.results) ? payload.results : Array.isArray(raw) ? raw : [];
+  const results = rawResults
+    .map((row) => {
+      const item = typeof row === "object" && row !== null ? (row as Record<string, unknown>) : null;
+      if (!item) {
+        return null;
+      }
+
+      const geographyCandidate = item.geography ?? item.profile ?? item.candidate ?? item;
+      const geography =
+        typeof geographyCandidate === "object" && geographyCandidate !== null
+          ? (geographyCandidate as SimilarityResponse["results"][number]["geography"])
+          : null;
+      const distanceValue =
+        item.distance ??
+        item.similarity_distance ??
+        item.distance_score ??
+        item.score ??
+        item.metric_value;
+      const distance = typeof distanceValue === "number" ? distanceValue : Number(distanceValue);
+
+      if (!geography || !geography.name || !Number.isFinite(distance)) {
+        return null;
+      }
+
+      return {
+        geography,
+        distance,
+      };
+    })
+    .filter((row): row is SimilarityResponse["results"][number] => row !== null);
+
+  return {
+    query: typeof payload.query === "string" ? payload.query : "",
+    mode:
+      payload.mode === "similar-form" || payload.mode === "similar"
+        ? payload.mode
+        : defaultMode,
+    count: typeof payload.count === "number" ? payload.count : results.length,
+    results,
+  };
 }
 
 export class GeoCompareApi {
@@ -209,6 +258,16 @@ export class GeoCompareApi {
     kilometers?: boolean;
   }) {
     return this.request<NearestResponse>(this.baseUrl, "/nearest", params, "nearest");
+  }
+
+  async similar(params: SimilarityParams) {
+    const response = await this.request<unknown>(this.baseUrl, "/similar", params, "similar");
+    return normalizeSimilarityResponse(response, "similar");
+  }
+
+  async similarForm(params: SimilarityParams) {
+    const response = await this.request<unknown>(this.baseUrl, "/similar-form", params, "similar");
+    return normalizeSimilarityResponse(response, "similar-form");
   }
 
   sources() {

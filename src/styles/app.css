@@ -351,6 +351,27 @@ button {
   grid-column: 1 / -2;
 }
 
+.checkbox-grid-fieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.checkbox-grid-fieldset legend {
+  padding: 0;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.checkbox-grid {
+  display: grid;
+  gap: 10px 14px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .ranking-form-wide {
   grid-column: 1 / -2;
 }
@@ -1200,6 +1221,10 @@ tbody tr.selected {
 
   .nearest-form-wide {
     grid-column: auto;
+  }
+
+  .checkbox-grid {
+    grid-template-columns: 1fr;
   }
 
   .panel,
