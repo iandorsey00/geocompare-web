@@ -13,9 +13,13 @@ type NearestPanelProps = {
 };
 
 const SCOPE_OPTIONS = [
-  { value: "places+", label: "Places" },
   { value: "tracts+", label: "Census tracts" },
+  { value: "zctas+", label: "ZCTAs" },
+  { value: "places+", label: "Places" },
   { value: "counties+", label: "Counties" },
+  { value: "states+", label: "States" },
+  { value: "urbanareas+", label: "Urban areas" },
+  { value: "cbsas+", label: "Metro areas" },
 ];
 
 const COUNT_OPTIONS = [5, 10, 15, 25];
