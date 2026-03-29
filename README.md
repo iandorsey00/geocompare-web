@@ -163,6 +163,7 @@ See:
 - Profile map actions prefer GeoCompare's backend-generated Google Maps and Street View links, with a local compatibility fallback if `/map-links` is not yet live.
 - Ranking supports states, counties, places, census tracts, ZCTAs, urban areas, and metro areas.
 - Similarity supports peer-level defaults, one geography type, multiple geography types, and explicit `All` across states, counties, places, census tracts, ZCTAs, urban areas, and metro areas.
+- Similarity keeps peer-level comparison as the default and hides state, county, and ZCTA narrowing under an Advanced drawer.
 - Remoteness uses the same geography scope list and population-threshold filters as ranking.
 - Remoteness keeps its core controls visible and hides optional county population minimum, county density minimum, one-per-county limiting, and kilometer distance display under Advanced.
 - Remoteness numeric text inputs now accept comma separators in line with GeoCompare's numeric flag parsing.

@@ -5,6 +5,7 @@ import { GeoResolvePanel } from "./components/GeoResolvePanel";
 import { NearestPanel } from "./components/NearestPanel";
 import { ResultsTable } from "./components/ResultsTable";
 import { SearchPanel } from "./components/SearchPanel";
+import { SimilarityPanel } from "./components/SimilarityPanel";
 import { TopBottomPanel } from "./components/TopBottomPanel";
 import { GeoCompareApi } from "./lib/api";
 import type {
@@ -14,6 +15,7 @@ import type {
   NearestRow,
   SearchSelection,
   SelectedRow,
+  SimilarityRow,
   SourceRow,
 } from "./lib/types";
 
@@ -37,6 +39,9 @@ export default function App() {
   const [nearestRows, setNearestRows] = useState<NearestRow[]>([]);
   const [isLoadingNearest, setIsLoadingNearest] = useState(false);
   const [nearestStatus, setNearestStatus] = useState("");
+  const [similarRows, setSimilarRows] = useState<SimilarityRow[]>([]);
+  const [isLoadingSimilar, setIsLoadingSimilar] = useState(false);
+  const [similarStatus, setSimilarStatus] = useState("");
   const [sourceRows, setSourceRows] = useState<SourceRow[]>([]);
   const [isLoadingSources, setIsLoadingSources] = useState(false);
   const [showSources, setShowSources] = useState(false);
@@ -59,6 +64,8 @@ export default function App() {
     setCompareProfiles([]);
     setNearestRows([]);
     setNearestStatus("");
+    setSimilarRows([]);
+    setSimilarStatus("");
     setFeedback(DEFAULT_FEEDBACK);
   }
 
@@ -111,6 +118,8 @@ export default function App() {
     setProfile(null);
     setNearestRows([]);
     setNearestStatus("");
+    setSimilarRows([]);
+    setSimilarStatus("");
 
     if (selection.item.geoid) {
       try {
@@ -205,6 +214,8 @@ export default function App() {
     setProfile(nextProfile);
     setNearestRows([]);
     setNearestStatus("");
+    setSimilarRows([]);
+    setSimilarStatus("");
     setSearchView("profile");
     setCompareProfiles([]);
     setFeedback(`Opened ${nextProfile.name}.`);
@@ -276,6 +287,8 @@ export default function App() {
       setProfile(null);
       setNearestRows([]);
       setNearestStatus("");
+      setSimilarRows([]);
+      setSimilarStatus("");
 
       if (nextRows.length === 1) {
         const nextSelection: SearchSelection = { kind: "search", item: nextRows[0] };
@@ -440,6 +453,8 @@ export default function App() {
                     setSearchView("results");
                     setNearestRows([]);
                     setNearestStatus("");
+                    setSimilarRows([]);
+                    setSimilarStatus("");
                   }}
                   type="button"
                 >
@@ -494,6 +509,65 @@ export default function App() {
                           setNearestStatus(error instanceof Error ? error.message : "Nearest request failed.");
                         } finally {
                           setIsLoadingNearest(false);
+                        }
+                      })();
+                    }}
+                    onOpen={(row) => {
+                      const nextSelection: SearchSelection = { kind: "search", item: row.geography };
+                      setSelected(nextSelection);
+                      void loadProfileForSelection(nextSelection);
+                    }}
+                  />
+                ) : null}
+                {profile ? (
+                  <SimilarityPanel
+                    profile={profile}
+                    rows={similarRows}
+                    isLoading={isLoadingSimilar}
+                    statusText={similarStatus}
+                    officialLabels
+                    onRun={({ mode, universe, universes, inState, inCounty, inZcta, n, officialLabels }) => {
+                      void (async () => {
+                        setIsLoadingSimilar(true);
+                        setSimilarStatus("Finding similar geographies...");
+                        try {
+                          const response =
+                            mode === "similar-form"
+                              ? await api.similarForm({
+                                  name: profile.display_name,
+                                  universe,
+                                  universes,
+                                  in_state: inState,
+                                  in_county: inCounty,
+                                  in_zcta: inZcta,
+                                  n,
+                                  official_labels: officialLabels,
+                                })
+                              : await api.similar({
+                                  name: profile.display_name,
+                                  universe,
+                                  universes,
+                                  in_state: inState,
+                                  in_county: inCounty,
+                                  in_zcta: inZcta,
+                                  n,
+                                  official_labels: officialLabels,
+                                });
+                          setSimilarRows(response.results);
+                          setSimilarStatus(
+                            response.results.length > 0
+                              ? `Showing ${response.results.length} ${
+                                  mode === "similar-form" ? "built-form" : "demographically"
+                                } similar geographies.`
+                              : "No similar geographies matched that query.",
+                          );
+                        } catch (error) {
+                          const message =
+                            error instanceof Error ? error.message : "Similarity request failed.";
+                          setFeedback(message);
+                          setSimilarStatus(message);
+                        } finally {
+                          setIsLoadingSimilar(false);
                         }
                       })();
                     }}

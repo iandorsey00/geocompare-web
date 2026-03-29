@@ -197,7 +197,9 @@ export type SimilarityParams = {
   name: string;
   universe?: string;
   universes?: string;
-  where?: string;
+  in_state?: string;
+  in_county?: string;
+  in_zcta?: string;
   n: number;
   official_labels?: boolean;
 };

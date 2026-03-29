@@ -43,7 +43,7 @@ const REQUEST_TIMEOUT_MS: Record<RequestTimeoutName, number> = {
   top: 20_000,
   bottom: 20_000,
   nearest: 20_000,
-  similar: 20_000,
+  similar: 45_000,
   georesolve: 20_000,
   sources: 10_000,
   mapLinks: 20_000,

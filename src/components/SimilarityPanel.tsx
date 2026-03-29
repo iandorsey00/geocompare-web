@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { formatNumber } from "../lib/format";
+import { countiesByState, stateOptions } from "../lib/geo-options";
 import type { GeographyProfile, SimilarityMode, SimilarityRow } from "../lib/types";
 import { SectionCard } from "./SectionCard";
 
@@ -13,6 +14,9 @@ type SimilarityPanelProps = {
     mode: SimilarityMode;
     universe?: string;
     universes?: string;
+    inState?: string;
+    inCounty?: string;
+    inZcta?: string;
     n: number;
     officialLabels?: boolean;
   }) => void;
@@ -36,7 +40,8 @@ const UNIVERSE_OPTIONS = [
 
 const COUNT_OPTIONS = [5, 10, 15, 25];
 
-type ScopeMode = "peer" | "single" | "multiple" | "all";
+type UniverseMode = "peer" | "single" | "multiple" | "all";
+type GroupMode = "all" | "state" | "county" | "zcta";
 
 export function SimilarityPanel({
   profile,
@@ -48,10 +53,20 @@ export function SimilarityPanel({
   onOpen,
 }: SimilarityPanelProps) {
   const [mode, setMode] = useState<SimilarityMode>("similar");
-  const [scopeMode, setScopeMode] = useState<ScopeMode>("peer");
+  const [universeMode, setUniverseMode] = useState<UniverseMode>("peer");
   const [universe, setUniverse] = useState("places");
   const [selectedUniverses, setSelectedUniverses] = useState<string[]>(["places", "tracts"]);
   const [count, setCount] = useState(10);
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [groupMode, setGroupMode] = useState<GroupMode>("all");
+  const [stateValue, setStateValue] = useState("");
+  const [countyValue, setCountyValue] = useState("");
+  const [zctaValue, setZctaValue] = useState("");
+
+  const countyOptions = useMemo(
+    () => (stateValue ? countiesByState[stateValue] ?? [] : []),
+    [stateValue],
+  );
 
   function toggleUniverse(nextValue: string) {
     setSelectedUniverses((current) =>
@@ -73,13 +88,16 @@ export function SimilarityPanel({
           event.preventDefault();
           onRun({
             mode,
-            universe: scopeMode === "single" ? universe : undefined,
+            universe: universeMode === "single" ? universe : undefined,
             universes:
-              scopeMode === "multiple"
+              universeMode === "multiple"
                 ? selectedUniverses.join(",")
-                : scopeMode === "all"
+                : universeMode === "all"
                   ? "All"
                   : undefined,
+            inState: groupMode === "state" || groupMode === "county" ? stateValue.toLowerCase() : undefined,
+            inCounty: groupMode === "county" ? countyValue : undefined,
+            inZcta: groupMode === "zcta" ? zctaValue.trim() : undefined,
             n: count,
             officialLabels,
           });
@@ -97,7 +115,7 @@ export function SimilarityPanel({
         </label>
         <label>
           <span>Universe</span>
-          <select value={scopeMode} onChange={(event) => setScopeMode(event.target.value as ScopeMode)}>
+          <select value={universeMode} onChange={(event) => setUniverseMode(event.target.value as UniverseMode)}>
             <option value="peer">Peer geographies</option>
             <option value="single">One geography type</option>
             <option value="multiple">Multiple geography types</option>
@@ -114,7 +132,14 @@ export function SimilarityPanel({
             ))}
           </select>
         </label>
-        {scopeMode === "single" ? (
+        <button
+          className="text-link search-advanced-toggle"
+          onClick={() => setShowAdvanced((current) => !current)}
+          type="button"
+        >
+          {showAdvanced ? "Hide advanced" : "Advanced"}
+        </button>
+        {universeMode === "single" ? (
           <label className="nearest-form-wide">
             <span>Geography type</span>
             <select value={universe} onChange={(event) => setUniverse(event.target.value)}>
@@ -126,7 +151,7 @@ export function SimilarityPanel({
             </select>
           </label>
         ) : null}
-        {scopeMode === "multiple" ? (
+        {universeMode === "multiple" ? (
           <fieldset className="nearest-form-wide checkbox-grid-fieldset">
             <legend>Geography types</legend>
             <div className="checkbox-grid">
@@ -142,6 +167,86 @@ export function SimilarityPanel({
               ))}
             </div>
           </fieldset>
+        ) : null}
+        {showAdvanced ? (
+          <label>
+            <span>Within</span>
+            <select
+              value={groupMode}
+              onChange={(event) => {
+                const nextMode = event.target.value as GroupMode;
+                setGroupMode(nextMode);
+                if (nextMode === "all") {
+                  setStateValue("");
+                  setCountyValue("");
+                  setZctaValue("");
+                } else {
+                  if (nextMode !== "county") {
+                    setCountyValue("");
+                  }
+                  if (nextMode !== "zcta") {
+                    setZctaValue("");
+                  }
+                }
+              }}
+            >
+              <option value="all">Everywhere</option>
+              <option value="state">Within state</option>
+              <option value="county">Within county</option>
+              <option value="zcta">Within ZCTA</option>
+            </select>
+          </label>
+        ) : null}
+        {showAdvanced && (groupMode === "state" || groupMode === "county") ? (
+          <label>
+            <span>State</span>
+            <select
+              value={stateValue}
+              onChange={(event) => {
+                setStateValue(event.target.value);
+                if (groupMode === "county") {
+                  setCountyValue("");
+                }
+              }}
+            >
+              <option value="">Select a state</option>
+              {stateOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : null}
+        {showAdvanced && groupMode === "county" ? (
+          <label>
+            <span>County</span>
+            <select
+              value={countyValue}
+              disabled={!stateValue}
+              onChange={(event) => setCountyValue(event.target.value)}
+            >
+              <option value="">{stateValue ? "Select a county" : "Select a state first"}</option>
+              {countyOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : null}
+        {showAdvanced && groupMode === "zcta" ? (
+          <label>
+            <span>ZCTA</span>
+            <input
+              inputMode="numeric"
+              maxLength={5}
+              pattern="[0-9]*"
+              placeholder="94103"
+              value={zctaValue}
+              onChange={(event) => setZctaValue(event.target.value.replace(/\D/g, "").slice(0, 5))}
+            />
+          </label>
         ) : null}
         <div className="ranking-actions">
           <button className="secondary-button" disabled={isLoading} type="submit">
