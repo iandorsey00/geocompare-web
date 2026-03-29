@@ -364,10 +364,25 @@ export default function App() {
         {surface === "search" ? (
           <section className="search-home">
             <nav className="action-links" aria-label="Primary actions">
-              <button className="text-link" onClick={() => setSurface("ranking")} type="button">
+              <button
+                className="surface-link is-active"
+                onClick={() => setSurface("search")}
+                type="button"
+              >
+                Search
+              </button>
+              <button
+                className="surface-link"
+                onClick={() => setSurface("ranking")}
+                type="button"
+              >
                 Ranking
               </button>
-              <button className="text-link" onClick={() => setSurface("resolve")} type="button">
+              <button
+                className="surface-link"
+                onClick={() => setSurface("resolve")}
+                type="button"
+              >
                 GeoResolve
               </button>
             </nav>

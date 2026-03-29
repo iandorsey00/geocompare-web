@@ -32,6 +32,103 @@ function isSelected(selected: SelectedRow | null, rowName: string) {
   return selected.item.candidate.name === rowName;
 }
 
+function renderSearchCard(
+  row: GeographySummary,
+  selected: SelectedRow | null,
+  onSelect: (row: SelectedRow) => void,
+  onAddCompare?: (row: GeographySummary) => void,
+  comparedGeoids?: Set<string>,
+) {
+  const nextSelection: SearchSelection = {
+    kind: "search",
+    item: row,
+  };
+
+  return (
+    <button
+      key={row.name}
+      className={`mobile-result-card${isSelected(selected, row.name) ? " is-selected" : ""}`}
+      onClick={() => onSelect(nextSelection)}
+      type="button"
+    >
+      <div className="mobile-result-main">
+        <strong>{row.name}</strong>
+        <p>{row.canonical_name !== row.name ? row.canonical_name : friendlySumlevel(row.sumlevel)}</p>
+      </div>
+      <div className="mobile-result-meta">
+        <span>{friendlySumlevel(row.sumlevel)}</span>
+        <span>{row.state ?? "—"}</span>
+        <span>Population {formatNumber(row.population ?? null)}</span>
+      </div>
+      {onAddCompare ? (
+        <span className="mobile-result-action">
+          {row.geoid && comparedGeoids?.has(row.geoid) ? "Added" : "Compare"}
+        </span>
+      ) : null}
+    </button>
+  );
+}
+
+function renderRemotenessCard(row: RemotenessRow, selected: SelectedRow | null, onSelect: (row: SelectedRow) => void) {
+  return (
+    <button
+      key={`${row.candidate.name}-${row.nearest_match.name}`}
+      className={`mobile-result-card${isSelected(selected, row.candidate.name) ? " is-selected" : ""}`}
+      onClick={() =>
+        onSelect({
+          kind: "remoteness",
+          item: row,
+        })
+      }
+      type="button"
+    >
+      <div className="mobile-result-main">
+        <strong>{row.candidate.name}</strong>
+        <p>{friendlySumlevel(row.candidate.sumlevel)}</p>
+      </div>
+      <div className="mobile-result-meta">
+        <span>
+          {formatNumber(row.candidate_value)} · {row.metric_label}
+        </span>
+        <span>Nearest {row.nearest_match.name}</span>
+        <span>
+          {formatNumber(row.distance)} {row.distance_unit}
+        </span>
+      </div>
+    </button>
+  );
+}
+
+function renderLocalAverageCard(row: LocalAverageRow, selected: SelectedRow | null, onSelect: (row: SelectedRow) => void) {
+  return (
+    <button
+      key={row.candidate.name}
+      className={`mobile-result-card${isSelected(selected, row.candidate.name) ? " is-selected" : ""}`}
+      onClick={() =>
+        onSelect({
+          kind: "local-average",
+          item: row,
+        })
+      }
+      type="button"
+    >
+      <div className="mobile-result-main">
+        <strong>{row.candidate.name}</strong>
+        <p>{friendlySumlevel(row.candidate.sumlevel)}</p>
+      </div>
+      <div className="mobile-result-meta">
+        <span>
+          {formatNumber(row.candidate_value)} · {row.metric_label}
+        </span>
+        <span>Local average {formatNumber(row.local_average)}</span>
+        <span>
+          Neighbor span {formatNumber(row.neighbor_span)} {row.span_unit}
+        </span>
+      </div>
+    </button>
+  );
+}
+
 export function ResultsTable({
   resultKind,
   rows,
@@ -50,7 +147,17 @@ export function ResultsTable({
           <p>Run a search or query to start exploring.</p>
         </div>
       ) : (
-        <div className="table-wrap minimal-table-wrap">
+        <>
+          <div className="mobile-results-list">
+            {resultKind === "search"
+              ? (rows as GeographySummary[]).map((row) =>
+                  renderSearchCard(row, selected, onSelect, onAddCompare, comparedGeoids),
+                )
+              : resultKind === "remoteness"
+                ? (rows as RemotenessRow[]).map((row) => renderRemotenessCard(row, selected, onSelect))
+                : (rows as LocalAverageRow[]).map((row) => renderLocalAverageCard(row, selected, onSelect))}
+          </div>
+          <div className="table-wrap minimal-table-wrap">
           <table>
             <thead>
               {resultKind === "search" ? (
@@ -168,7 +275,8 @@ export function ResultsTable({
                     ))}
             </tbody>
           </table>
-        </div>
+          </div>
+        </>
       )}
     </SectionCard>
   );

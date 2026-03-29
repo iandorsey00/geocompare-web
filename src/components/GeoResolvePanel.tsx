@@ -331,7 +331,7 @@ export function GeoResolvePanel({
           </button>
         }
       >
-        <form className="search-inline-compact" onSubmit={handleResolve}>
+        <form className="resolve-form" onSubmit={handleResolve}>
           <label>
             <span>Query</span>
             <div className="input-with-clear">
@@ -355,23 +355,25 @@ export function GeoResolvePanel({
               ) : null}
             </div>
           </label>
-          <button
-            className="text-link search-advanced-toggle"
-            onClick={() => {
-              void handleResolveCurrentLocation();
-            }}
-            disabled={isResolving || isResolvingCurrentLocation}
-            type="button"
-          >
-            {isResolvingCurrentLocation ? "Locating..." : "Use current location"}
-          </button>
-          <button
-            className="primary-button search-submit search-submit-inline"
-            disabled={isResolving || isResolvingCurrentLocation || !query.trim()}
-            type="submit"
-          >
-            {isResolving ? "Resolving..." : "Resolve"}
-          </button>
+          <div className="resolve-form-actions">
+            <button
+              className="text-link search-advanced-toggle"
+              onClick={() => {
+                void handleResolveCurrentLocation();
+              }}
+              disabled={isResolving || isResolvingCurrentLocation}
+              type="button"
+            >
+              {isResolvingCurrentLocation ? "Locating..." : "Use current location"}
+            </button>
+            <button
+              className="primary-button search-submit search-submit-inline"
+              disabled={isResolving || isResolvingCurrentLocation || !query.trim()}
+              type="submit"
+            >
+              {isResolving ? "Resolving..." : "Resolve"}
+            </button>
+          </div>
         </form>
         <p className="panel-subtitle">
           Accepts street addresses, raw lat/lon like `38.8899, -77.0091`, and map URLs only when the URL includes coordinates.
