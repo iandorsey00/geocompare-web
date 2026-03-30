@@ -76,7 +76,6 @@ export function MapPanel({ profile }: MapPanelProps) {
         if (cancelled) {
           return;
         }
-        setGoogleHref(links.google_maps_url);
         setStreetViewHref(links.google_street_view_url);
       } catch {
         if (cancelled) {

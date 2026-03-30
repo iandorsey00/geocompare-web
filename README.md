@@ -160,7 +160,7 @@ See:
 - GeoResolve current-location lookup uses the browser geolocation API and `/resolve-current-location`.
 - GeoResolve profile opening is GEOID-first.
 - Compare currently stays table-first; maps are shown on single-profile views only.
-- Profile map actions prefer GeoCompare's backend-generated Google Maps and Street View links, with a local compatibility fallback if `/map-links` is not yet live.
+- Profile map actions use readable place-first Google Maps queries in the web app while still using GeoCompare's backend-generated Street View links, with a local compatibility fallback if `/map-links` is not yet live.
 - Ranking supports states, counties, places, census tracts, ZCTAs, urban areas, and metro areas.
 - Similarity supports peer-level defaults, one geography type, multiple geography types, and explicit `All` across states, counties, places, census tracts, ZCTAs, urban areas, and metro areas.
 - Similarity keeps peer-level comparison as the default and hides state, county, and ZCTA narrowing under an Advanced drawer.

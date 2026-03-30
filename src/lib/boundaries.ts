@@ -302,15 +302,6 @@ function extractPositions(geometry: GeoJSON.Geometry): number[][] {
 }
 
 export function googleMapsUrl(profile: GeographyProfile) {
-  const lat = profile.metrics.latitude;
-  const lon = profile.metrics.longitude;
-  const hasCoords = (typeof lat === "number" || typeof lat === "string") && (typeof lon === "number" || typeof lon === "string");
-
-  if (hasCoords) {
-    const query = encodeURIComponent(`${lat},${lon}`);
-    return `https://www.google.com/maps/search/?api=1&query=${query}`;
-  }
-
   const stateLabel = profile.state ? `, ${profile.state.toUpperCase()}` : "";
   let queryText = profile.display_name || profile.name || profile.canonical_name;
 
@@ -319,6 +310,11 @@ export function googleMapsUrl(profile: GeographyProfile) {
     queryText = zcta ? `${zcta}${stateLabel}` : profile.display_name || profile.name || profile.canonical_name;
   } else if (profile.sumlevel === "140") {
     queryText = `${profile.counties_display[0] || ""}${stateLabel}`.replace(/^,\s*/, "") || profile.display_name || profile.name;
+  } else if (profile.sumlevel === "160") {
+    queryText = queryText.replace(
+      /\s+(CDP|city|town|village|borough|municipality|unified government)(?=,)/i,
+      "",
+    );
   }
 
   const query = encodeURIComponent(queryText);
