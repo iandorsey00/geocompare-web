@@ -111,9 +111,9 @@ const PROFILE_SECTIONS: ProfileSection[] = [
   {
     title: "Crime",
     rows: [
-      { key: "property_crime_count", label: "Property crimes", pctKey: "property_crime_rate" },
       { key: "total_crime_count", label: "Total crimes", pctKey: "total_crime_rate" },
       { key: "violent_crime_count", label: "Violent crimes", pctKey: "violent_crime_rate" },
+      { key: "property_crime_count", label: "Property crimes", pctKey: "property_crime_rate" },
     ],
   },
   {
