@@ -136,7 +136,7 @@ button {
 
 .minimal-header {
   display: grid;
-  gap: 12px;
+  gap: 8px;
   justify-items: center;
   text-align: center;
   padding: 20px 0 6px;
@@ -157,12 +157,50 @@ button {
   color: inherit;
 }
 
-.status-copy {
+.app-status-banner {
+  display: grid;
+  justify-items: center;
+  padding-top: 4px;
+}
+
+.app-status-banner p {
   margin: 0;
-  color: var(--muted);
   max-width: 54ch;
-  font-size: 1.02rem;
+  padding: 10px 14px;
+  border-radius: 14px;
+  font-size: 0.98rem;
+  text-align: center;
   text-wrap: balance;
+}
+
+.app-status-banner.is-info p {
+  background: var(--panel);
+  color: var(--muted);
+  border: 1px solid var(--line);
+}
+
+.app-status-banner.is-success p {
+  background: rgba(32, 112, 74, 0.08);
+  color: #236445;
+  border: 1px solid rgba(32, 112, 74, 0.14);
+}
+
+.app-status-banner.is-error p {
+  background: rgba(180, 61, 61, 0.08);
+  color: #9a3030;
+  border: 1px solid rgba(180, 61, 61, 0.14);
+}
+
+@media (prefers-color-scheme: dark) {
+  .app-status-banner.is-success p {
+    color: #9ad3b2;
+    border-color: rgba(88, 180, 130, 0.18);
+  }
+
+  .app-status-banner.is-error p {
+    color: #f0aaaa;
+    border-color: rgba(214, 104, 104, 0.18);
+  }
 }
 
 .search-home {

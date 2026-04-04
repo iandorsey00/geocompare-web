@@ -26,6 +26,34 @@ const defaultConfig: ApiConfig = {
   georesolveBaseUrl: import.meta.env.VITE_GEORESOLVE_API_BASE_URL ?? "/georesolve-api",
 };
 
+function feedbackTone(message: string) {
+  const lower = message.toLowerCase();
+
+  if (
+    lower.includes("failed") ||
+    lower.includes("unavailable") ||
+    lower.includes("error") ||
+    lower.includes("no ") ||
+    lower.includes("choose ") ||
+    lower.includes("enter ")
+  ) {
+    return "error";
+  }
+
+  if (
+    lower.includes("loading") ||
+    lower.includes("searching") ||
+    lower.includes("finding") ||
+    lower.includes("opening") ||
+    lower.includes("resolving") ||
+    lower.includes("locating")
+  ) {
+    return "info";
+  }
+
+  return "success";
+}
+
 export default function App() {
   const initialQueryFromUrl = useMemo(() => {
     if (typeof window === "undefined") {
@@ -60,6 +88,8 @@ export default function App() {
   const api = useMemo(() => new GeoCompareApi(config), [config]);
   const activeSearchController = useRef<AbortController | null>(null);
   const currentYear = new Date().getFullYear();
+  const visibleFeedback = feedback === DEFAULT_FEEDBACK ? "" : feedback;
+  const visibleFeedbackTone = visibleFeedback ? feedbackTone(visibleFeedback) : "info";
 
   function handleReturnHome() {
     activeSearchController.current?.abort();
@@ -408,8 +438,17 @@ export default function App() {
           <button className="brand-mark brand-button" onClick={handleReturnHome} type="button">
             GeoCompare
           </button>
-          <p className="status-copy">{feedback}</p>
         </header>
+
+        {visibleFeedback ? (
+          <div
+            aria-live="polite"
+            className={`app-status-banner is-${visibleFeedbackTone}`}
+            role={visibleFeedbackTone === "error" ? "alert" : "status"}
+          >
+            <p>{visibleFeedback}</p>
+          </div>
+        ) : null}
 
         {compareProfiles.length > 1 ? (
           <div className="compare-launch">
