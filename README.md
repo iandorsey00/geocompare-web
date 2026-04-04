@@ -168,6 +168,7 @@ See:
 - Similarity supports peer-level defaults, one geography type, multiple geography types, and explicit `All` across states, counties, places, census tracts, ZCTAs, urban areas, and metro areas.
 - Similarity keeps peer-level comparison as the default and hides state, county, and ZCTA narrowing under an Advanced drawer.
 - Remoteness uses the same geography scope list and population-threshold filters as ranking.
+- Ranking and remoteness share the same metric dropdown, including `White, not Hispanic`, and keep the run button higher in the form for a cleaner layout.
 - Remoteness keeps its core controls visible and hides optional county population minimum, county density minimum, one-per-county limiting, and kilometer distance display under Advanced.
 - Remoteness numeric text inputs now accept comma separators in line with GeoCompare's numeric flag parsing.
 - Remoteness results now show population context for both the candidate and the nearest match.

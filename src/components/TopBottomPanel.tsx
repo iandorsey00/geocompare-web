@@ -62,6 +62,7 @@ const METRIC_OPTIONS = [
   { value: "under_18_pct", label: "Population under 18" },
   { value: "age_65_plus_pct", label: "Population 65 and over" },
   { value: "white_alone_pct", label: "White alone" },
+  { value: "white_alone_not_hispanic_or_latino_pct", label: "White, not Hispanic" },
   { value: "black_alone_pct", label: "Black population" },
   { value: "asian_alone_pct", label: "Asian population" },
   { value: "hispanic_or_latino_pct", label: "Hispanic or Latino" },
@@ -610,6 +611,11 @@ export function TopBottomPanel({ config, comparedGeoids, onAddCompareProfile, on
               ))}
             </select>
           </label>
+          <div className="ranking-actions">
+            <button className="primary-button" disabled={isRunning} type="submit">
+              {isRunning ? "Loading..." : mode === "ranking" ? "Run ranking" : "Run remoteness"}
+            </button>
+          </div>
           {form.wherePreset === "__custom__" ? (
             <label className="ranking-form-wide">
               <span>Custom filter</span>
@@ -693,11 +699,6 @@ export function TopBottomPanel({ config, comparedGeoids, onAddCompareProfile, on
             />
             <span>Official tract labels</span>
           </label>
-          <div className="ranking-actions">
-            <button className="primary-button" disabled={isRunning} type="submit">
-              {isRunning ? "Loading..." : mode === "ranking" ? "Run ranking" : "Run remoteness"}
-            </button>
-          </div>
         </form>
       </SectionCard>
 
