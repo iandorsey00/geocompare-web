@@ -67,6 +67,8 @@ export type SimilarityResponse = {
   results: SimilarityRow[];
 };
 
+export type StreetBias = "arterials" | "local-streets";
+
 export type ResolveResponse = {
   query: string;
   count: number;

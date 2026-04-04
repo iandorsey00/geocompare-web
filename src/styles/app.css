@@ -303,6 +303,33 @@ button {
   justify-items: end;
 }
 
+.street-view-advanced-toggle {
+  justify-self: end;
+}
+
+.street-view-advanced-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.street-bias-chip {
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--input-bg);
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.street-bias-chip.is-active {
+  border-color: rgba(41, 92, 170, 0.28);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
 .panel-header h2,
 .detail-stack h3 {
   margin: 0;

@@ -15,6 +15,7 @@ import type {
   SimilarityResponse,
   MapLinksResponse,
   SourcesResponse,
+  StreetBias,
 } from "./types";
 
 type Primitive = string | number | boolean | undefined;
@@ -274,7 +275,7 @@ export class GeoCompareApi {
     return this.request<SourcesResponse>(this.baseUrl, "/sources", {}, "sources");
   }
 
-  mapLinks(params: { name?: string; geoid?: string }) {
+  mapLinks(params: { name?: string; geoid?: string; street_bias?: StreetBias }) {
     return this.request<MapLinksResponse>(this.baseUrl, "/map-links", params, "mapLinks");
   }
 }

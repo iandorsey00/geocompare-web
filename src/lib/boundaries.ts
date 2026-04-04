@@ -1,9 +1,12 @@
-import type { GeographyProfile } from "./types";
+import type { GeographyProfile, StreetBias } from "./types";
 
 type GeometryFeature = GeoJSON.Feature<GeoJSON.Geometry>;
 type FeatureCollection = GeoJSON.FeatureCollection<GeoJSON.Geometry>;
 type OverpassElement = {
   type: string;
+  tags?: {
+    highway?: string | string[];
+  };
   geometry?: Array<{ lat: number; lon: number }>;
 };
 type OverpassResponse = {
@@ -52,6 +55,23 @@ const NATIONAL_BOUNDARY_SOURCE: BoundarySource = {
   serviceUrl: "https://tigerweb.geo.census.gov/arcgis/rest/services/Generalized_ACS2022/State_County/MapServer",
   layerIds: [6, 7, 8, 9],
 };
+
+const ARTERIAL_HIGHWAY_TAGS = new Set([
+  "primary",
+  "primary_link",
+  "secondary",
+  "secondary_link",
+]);
+
+const LOCAL_STREET_HIGHWAY_TAGS = new Set([
+  "tertiary",
+  "tertiary_link",
+  "unclassified",
+  "residential",
+  "living_street",
+  "service",
+  "road",
+]);
 
 function normalizedGeoid(geoid: string | null) {
   if (!geoid) {
@@ -234,7 +254,23 @@ function randomPointWithinBoundary(boundary: FeatureCollection) {
   return null;
 }
 
-async function fetchRoadPointWithinBoundary(boundary: FeatureCollection) {
+function highwayMatchesStreetBias(highway: string | string[] | undefined, streetBias?: StreetBias) {
+  if (!streetBias) {
+    return true;
+  }
+
+  const highwayValues = Array.isArray(highway) ? highway : typeof highway === "string" ? [highway] : [];
+  if (highwayValues.length === 0) {
+    return false;
+  }
+
+  const allowedTags =
+    streetBias === "arterials" ? ARTERIAL_HIGHWAY_TAGS : LOCAL_STREET_HIGHWAY_TAGS;
+
+  return highwayValues.some((value) => allowedTags.has(value));
+}
+
+async function fetchRoadPointWithinBoundary(boundary: FeatureCollection, streetBias?: StreetBias) {
   const bounds = getBoundaryBounds(boundary);
   if (!bounds) {
     return null;
@@ -267,6 +303,9 @@ out geom;
 
   for (const element of json.elements ?? []) {
     if (element.type !== "way" || !element.geometry) {
+      continue;
+    }
+    if (!highwayMatchesStreetBias(element.tags?.highway, streetBias)) {
       continue;
     }
 
@@ -321,12 +360,16 @@ export function googleMapsUrl(profile: GeographyProfile) {
   return `https://www.google.com/maps/search/?api=1&query=${query}`;
 }
 
-export async function randomStreetViewUrl(profile: GeographyProfile, boundary: FeatureCollection | null) {
+export async function randomStreetViewUrl(
+  profile: GeographyProfile,
+  boundary: FeatureCollection | null,
+  streetBias?: StreetBias,
+) {
   let randomPoint: Point | null = null;
 
   if (boundary) {
     try {
-      randomPoint = await fetchRoadPointWithinBoundary(boundary);
+      randomPoint = await fetchRoadPointWithinBoundary(boundary, streetBias);
     } catch {
       randomPoint = null;
     }

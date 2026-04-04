@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import L from "leaflet";
 import { GeoCompareApi } from "../lib/api";
 import { fetchBoundary, googleMapsUrl, randomStreetViewUrl } from "../lib/boundaries";
-import type { GeographyProfile } from "../lib/types";
+import type { GeographyProfile, StreetBias } from "../lib/types";
 import { SectionCard } from "./SectionCard";
 
 type MapPanelProps = {
@@ -23,6 +23,8 @@ export function MapPanel({ profile }: MapPanelProps) {
   const [isGeneratingStreetView, setIsGeneratingStreetView] = useState(false);
   const [googleHref, setGoogleHref] = useState(() => googleMapsUrl(profile));
   const [streetViewHref, setStreetViewHref] = useState<string | null>(null);
+  const [showStreetViewAdvanced, setShowStreetViewAdvanced] = useState(false);
+  const [streetBias, setStreetBias] = useState<StreetBias | null>(null);
   const [isDarkMode, setIsDarkMode] = useState(() =>
     window.matchMedia("(prefers-color-scheme: dark)").matches,
   );
@@ -66,6 +68,8 @@ export function MapPanel({ profile }: MapPanelProps) {
     let cancelled = false;
     setGoogleHref(googleMapsUrl(profile));
     setStreetViewHref(null);
+    setStreetBias(null);
+    setShowStreetViewAdvanced(false);
 
     void (async () => {
       try {
@@ -125,7 +129,27 @@ export function MapPanel({ profile }: MapPanelProps) {
   async function openRandomStreetView() {
     setIsGeneratingStreetView(true);
     try {
-      const nextUrl = streetViewHref ?? (await randomStreetViewUrl(profile, boundary));
+      let nextUrl: string | null = null;
+
+      if (streetBias) {
+        try {
+          const links = await api.mapLinks({
+            geoid: profile.geoid || undefined,
+            name: profile.geoid ? undefined : profile.display_name || profile.name,
+            street_bias: streetBias,
+          });
+          nextUrl = links.google_street_view_url;
+        } catch {
+          nextUrl = null;
+        }
+      } else {
+        nextUrl = streetViewHref;
+      }
+
+      if (!nextUrl) {
+        nextUrl = await randomStreetViewUrl(profile, boundary, streetBias ?? undefined);
+      }
+
       window.open(nextUrl, "_blank", "noopener,noreferrer");
     } finally {
       setIsGeneratingStreetView(false);
@@ -152,6 +176,37 @@ export function MapPanel({ profile }: MapPanelProps) {
           >
             {isGeneratingStreetView ? "Finding road..." : "Random Google Street View"}
           </button>
+          <button
+            className="text-link street-view-advanced-toggle"
+            onClick={() => setShowStreetViewAdvanced((current) => !current)}
+            type="button"
+          >
+            {showStreetViewAdvanced ? "Hide advanced" : "Advanced"}
+          </button>
+          {showStreetViewAdvanced ? (
+            <div className="street-view-advanced-options" role="group" aria-label="Street View road bias">
+              <button
+                className={`street-bias-chip${streetBias === "arterials" ? " is-active" : ""}`}
+                onClick={() =>
+                  setStreetBias((current) => (current === "arterials" ? null : "arterials"))
+                }
+                type="button"
+              >
+                Arterials
+              </button>
+              <button
+                className={`street-bias-chip${streetBias === "local-streets" ? " is-active" : ""}`}
+                onClick={() =>
+                  setStreetBias((current) =>
+                    current === "local-streets" ? null : "local-streets",
+                  )
+                }
+                type="button"
+              >
+                Local streets
+              </button>
+            </div>
+          ) : null}
         </div>
       }
     >
