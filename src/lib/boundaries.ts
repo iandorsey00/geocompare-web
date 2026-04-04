@@ -157,6 +157,9 @@ export async function fetchBoundary(profile: GeographyProfile) {
 }
 
 type Point = { latitude: number; longitude: number };
+type StreetViewPoint = Point & {
+  heading?: number;
+};
 type Bounds = {
   minLongitude: number;
   maxLongitude: number;
@@ -270,6 +273,26 @@ function highwayMatchesStreetBias(highway: string | string[] | undefined, street
   return highwayValues.some((value) => allowedTags.has(value));
 }
 
+function segmentHeading(from: Point, to: Point) {
+  const lat1 = (from.latitude * Math.PI) / 180;
+  const lat2 = (to.latitude * Math.PI) / 180;
+  const deltaLongitude = ((to.longitude - from.longitude) * Math.PI) / 180;
+
+  const y = Math.sin(deltaLongitude) * Math.cos(lat2);
+  const x =
+    Math.cos(lat1) * Math.sin(lat2) -
+    Math.sin(lat1) * Math.cos(lat2) * Math.cos(deltaLongitude);
+
+  return (((Math.atan2(y, x) * 180) / Math.PI) + 360) % 360;
+}
+
+function pointFromGeometry(geometryPoint: { lat: number; lon: number }) {
+  return {
+    latitude: geometryPoint.lat,
+    longitude: geometryPoint.lon,
+  };
+}
+
 async function fetchRoadPointWithinBoundary(boundary: FeatureCollection, streetBias?: StreetBias) {
   const bounds = getBoundaryBounds(boundary);
   if (!bounds) {
@@ -299,7 +322,7 @@ out geom;
   }
 
   const json = (await response.json()) as OverpassResponse;
-  const candidatePoints: Point[] = [];
+  const candidatePoints: StreetViewPoint[] = [];
 
   for (const element of json.elements ?? []) {
     if (element.type !== "way" || !element.geometry) {
@@ -309,14 +332,27 @@ out geom;
       continue;
     }
 
-    for (const point of element.geometry) {
-      const candidate = {
-        latitude: point.lat,
-        longitude: point.lon,
-      };
+    for (let index = 0; index < element.geometry.length; index += 1) {
+      const point = element.geometry[index];
+      const candidate = pointFromGeometry(point);
 
       if (boundary.features.some((feature) => geometryContainsPoint(feature.geometry, candidate))) {
-        candidatePoints.push(candidate);
+        const previousPoint = index > 0 ? pointFromGeometry(element.geometry[index - 1]) : null;
+        const nextPoint =
+          index < element.geometry.length - 1 ? pointFromGeometry(element.geometry[index + 1]) : null;
+        const heading =
+          previousPoint && nextPoint
+            ? segmentHeading(previousPoint, nextPoint)
+            : previousPoint
+              ? segmentHeading(previousPoint, candidate)
+              : nextPoint
+                ? segmentHeading(candidate, nextPoint)
+                : undefined;
+
+        candidatePoints.push({
+          ...candidate,
+          heading,
+        });
       }
     }
   }
@@ -365,7 +401,7 @@ export async function randomStreetViewUrl(
   boundary: FeatureCollection | null,
   streetBias?: StreetBias,
 ) {
-  let randomPoint: Point | null = null;
+  let randomPoint: StreetViewPoint | null = null;
 
   if (boundary) {
     try {
@@ -381,10 +417,12 @@ export async function randomStreetViewUrl(
 
   const lat = randomPoint?.latitude ?? Number(profile.metrics.latitude);
   const lon = randomPoint?.longitude ?? Number(profile.metrics.longitude);
+  const heading = randomPoint?.heading;
   const hasCoords = Number.isFinite(lat) && Number.isFinite(lon);
 
   if (hasCoords) {
-    return `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat},${lon}`;
+    const headingParam = Number.isFinite(heading) ? `&heading=${Math.round(heading as number)}` : "";
+    return `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat},${lon}${headingParam}`;
   }
 
   return googleMapsUrl(profile);

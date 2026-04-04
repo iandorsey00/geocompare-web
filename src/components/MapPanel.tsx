@@ -166,23 +166,25 @@ export function MapPanel({ profile }: MapPanelProps) {
           <a className="text-link" href={googleHref} rel="noreferrer" target="_blank">
             Open in Google Maps
           </a>
-          <button
-            className="text-link"
-            disabled={isGeneratingStreetView}
-            onClick={() => {
-              void openRandomStreetView();
-            }}
-            type="button"
-          >
-            {isGeneratingStreetView ? "Finding road..." : "Random Google Street View"}
-          </button>
-          <button
-            className="text-link street-view-advanced-toggle"
-            onClick={() => setShowStreetViewAdvanced((current) => !current)}
-            type="button"
-          >
-            {showStreetViewAdvanced ? "Hide advanced" : "Advanced"}
-          </button>
+          <div className="street-view-action-line">
+            <button
+              className="text-link"
+              disabled={isGeneratingStreetView}
+              onClick={() => {
+                void openRandomStreetView();
+              }}
+              type="button"
+            >
+              {isGeneratingStreetView ? "Finding road..." : "Random Google Street View"}
+            </button>
+            <button
+              className="text-link street-view-advanced-toggle"
+              onClick={() => setShowStreetViewAdvanced((current) => !current)}
+              type="button"
+            >
+              {showStreetViewAdvanced ? "(Hide filters)" : "(Filters)"}
+            </button>
+          </div>
           {showStreetViewAdvanced ? (
             <div className="street-view-advanced-options" role="group" aria-label="Street View road bias">
               <button

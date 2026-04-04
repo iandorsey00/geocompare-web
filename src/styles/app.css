@@ -303,8 +303,17 @@ button {
   justify-items: end;
 }
 
+.street-view-action-line {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.28rem;
+  justify-content: flex-end;
+  align-items: baseline;
+}
+
 .street-view-advanced-toggle {
   justify-self: end;
+  text-decoration: none;
 }
 
 .street-view-advanced-options {
@@ -1212,6 +1221,10 @@ tbody tr.selected {
 
   .search-submit-inline {
     justify-self: end;
+  }
+
+  .street-view-action-line {
+    justify-content: flex-end;
   }
 
   .mobile-results-list {
