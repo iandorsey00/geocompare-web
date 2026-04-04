@@ -177,7 +177,7 @@ See:
 - Ranking and nearest share the same population-threshold filter presets plus a custom filter path.
 - Mobile layouts now use intentionally simplified states for forms and results, including card-style result rows instead of compressed tables where that improves readability.
 - The footer `Sources` link shows the built-in GeoCompare source list from the backend.
-- The footer `API` link shows the current web, GeoCompare, and GeoResolve versions, the live GET-style query endpoints used by GeoCompare and GeoResolve, including GeoCompare's `/map-links`, and links to the upstream repositories.
+- The footer `API` link shows the current web, GeoCompare, and GeoResolve versions, the live GET-style query endpoints used by GeoCompare and GeoResolve, including GeoCompare's `/map-links`, and links to the GeoCompare Web, GeoCompare, and GeoResolve repositories.
 - The app now includes a dedicated GeoCompare favicon and Apple touch icon for browser tabs and saved shortcuts.
 - Crime rows now lead with total crimes before violent and property crimes for a more natural summary order.
 - The current bundle is larger than ideal because of map support and static option data. Lazy loading would be a good future cleanup.

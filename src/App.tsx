@@ -739,6 +739,10 @@ export default function App() {
                 <p className="source-notes">
                   GeoCompare and GeoResolve are served separately behind <code>/api</code> and <code>/georesolve-api</code>.
                 </p>
+                <p className="source-link-row">
+                  <span className="source-link-label">GitHub:</span>{" "}
+                  <a className="text-link inline-text-link" href="https://github.com/iandorsey00/geocompare-web" rel="noreferrer" target="_blank">geocompare-web</a>
+                </p>
               </article>
               <article className="source-row">
                 <div className="source-heading">
