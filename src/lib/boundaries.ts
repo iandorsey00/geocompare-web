@@ -59,11 +59,11 @@ const NATIONAL_BOUNDARY_SOURCE: BoundarySource = {
 const ARTERIAL_HIGHWAY_TAGS = new Set([
   "primary",
   "primary_link",
-  "secondary",
-  "secondary_link",
 ]);
 
 const LOCAL_STREET_HIGHWAY_TAGS = new Set([
+  "secondary",
+  "secondary_link",
   "tertiary",
   "tertiary_link",
   "unclassified",

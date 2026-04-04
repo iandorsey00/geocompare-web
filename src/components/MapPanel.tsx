@@ -18,9 +18,13 @@ function getTileLayerConfig(_isDarkMode: boolean) {
 
 export function MapPanel({ profile }: MapPanelProps) {
   const mapRef = useRef<HTMLDivElement | null>(null);
+  const leafletMapRef = useRef<L.Map | null>(null);
+  const boundaryLayerRef = useRef<L.GeoJSON | null>(null);
+  const ignoreNextMoveRef = useRef(false);
   const [status, setStatus] = useState("Loading boundary...");
   const [boundary, setBoundary] = useState<GeoJSON.FeatureCollection<GeoJSON.Geometry> | null>(null);
   const [isGeneratingStreetView, setIsGeneratingStreetView] = useState(false);
+  const [showRecenter, setShowRecenter] = useState(false);
   const [googleHref, setGoogleHref] = useState(() => googleMapsUrl(profile));
   const [streetViewHref, setStreetViewHref] = useState<string | null>(null);
   const [showStreetViewAdvanced, setShowStreetViewAdvanced] = useState(false);
@@ -49,6 +53,7 @@ export function MapPanel({ profile }: MapPanelProps) {
     let cancelled = false;
     setBoundary(null);
     setStatus("Loading boundary...");
+    setShowRecenter(false);
 
     void (async () => {
       const nextBoundary = await fetchBoundary(profile);
@@ -119,9 +124,27 @@ export function MapPanel({ profile }: MapPanelProps) {
       },
     }).addTo(map);
 
+    leafletMapRef.current = map;
+    boundaryLayerRef.current = layer;
+    ignoreNextMoveRef.current = true;
     map.fitBounds(layer.getBounds(), { padding: [20, 20] });
 
+    const handleMoved = () => {
+      if (ignoreNextMoveRef.current) {
+        ignoreNextMoveRef.current = false;
+        return;
+      }
+      setShowRecenter(true);
+    };
+
+    map.on("moveend", handleMoved);
+    map.on("zoomend", handleMoved);
+
     return () => {
+      map.off("moveend", handleMoved);
+      map.off("zoomend", handleMoved);
+      leafletMapRef.current = null;
+      boundaryLayerRef.current = null;
       map.remove();
     };
   }, [boundary, isDarkMode]);
@@ -131,18 +154,7 @@ export function MapPanel({ profile }: MapPanelProps) {
     try {
       let nextUrl: string | null = null;
 
-      if (streetBias) {
-        try {
-          const links = await api.mapLinks({
-            geoid: profile.geoid || undefined,
-            name: profile.geoid ? undefined : profile.display_name || profile.name,
-            street_bias: streetBias,
-          });
-          nextUrl = links.google_street_view_url;
-        } catch {
-          nextUrl = null;
-        }
-      } else {
+      if (!streetBias) {
         nextUrl = streetViewHref;
       }
 
@@ -154,6 +166,17 @@ export function MapPanel({ profile }: MapPanelProps) {
     } finally {
       setIsGeneratingStreetView(false);
     }
+  }
+
+  function recenterMap() {
+    const map = leafletMapRef.current;
+    const layer = boundaryLayerRef.current;
+    if (!map || !layer) {
+      return;
+    }
+    ignoreNextMoveRef.current = true;
+    map.fitBounds(layer.getBounds(), { padding: [20, 20] });
+    setShowRecenter(false);
   }
 
   return (
@@ -220,7 +243,16 @@ export function MapPanel({ profile }: MapPanelProps) {
         </div>
       }
     >
-      {boundary ? <div className={`map-canvas${isDarkMode ? " is-dark" : ""}`} ref={mapRef} /> : null}
+      {boundary ? (
+        <div className="map-frame">
+          <div className={`map-canvas${isDarkMode ? " is-dark" : ""}`} ref={mapRef} />
+          {showRecenter ? (
+            <button className="map-recenter-button" onClick={recenterMap} type="button">
+              Recenter
+            </button>
+          ) : null}
+        </div>
+      ) : null}
       {status ? (
         <div className="plain-state">
           <p>{status}</p>
