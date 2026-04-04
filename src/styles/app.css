@@ -303,12 +303,17 @@ button {
   justify-items: end;
 }
 
+.panel-action-links .text-link {
+  white-space: nowrap;
+}
+
 .street-view-action-line {
   display: inline-flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 0.28rem;
   justify-content: flex-end;
   align-items: baseline;
+  white-space: nowrap;
 }
 
 .street-view-advanced-toggle {
@@ -526,11 +531,17 @@ label {
   color: var(--muted);
   padding: 0;
   line-height: 1;
-  font-size: 0.9rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .clear-field:hover {
   color: var(--ink);
+}
+
+.clear-field svg {
+  display: block;
 }
 
 label > span {
@@ -1248,17 +1259,24 @@ tbody tr.selected {
 
   .street-view-action-line {
     justify-content: flex-end;
-    width: 100%;
+    width: auto;
+    max-width: 100%;
     text-align: right;
+    font-size: 0.94rem;
   }
 
   .panel-action-links {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
     justify-items: end;
     width: 100%;
   }
 
   .street-view-advanced-options {
     justify-content: flex-end;
+    align-self: flex-end;
   }
 
   .mobile-results-list {

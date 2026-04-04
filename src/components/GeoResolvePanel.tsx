@@ -1,6 +1,7 @@
 import { type FormEvent, useMemo, useState } from "react";
 import { GeoCompareApi } from "../lib/api";
 import type { ApiConfig, GeoResolveResult, GeographyProfile, SelectedRow } from "../lib/types";
+import { CircleXIcon } from "./CircleXIcon";
 import { DetailPanel } from "./DetailPanel";
 import { SectionCard } from "./SectionCard";
 
@@ -350,7 +351,7 @@ export function GeoResolvePanel({
                   onClick={() => setQuery("")}
                   type="button"
                 >
-                  X
+                  <CircleXIcon />
                 </button>
               ) : null}
             </div>

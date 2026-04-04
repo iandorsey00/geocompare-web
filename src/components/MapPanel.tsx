@@ -20,7 +20,7 @@ export function MapPanel({ profile }: MapPanelProps) {
   const mapRef = useRef<HTMLDivElement | null>(null);
   const leafletMapRef = useRef<L.Map | null>(null);
   const boundaryLayerRef = useRef<L.GeoJSON | null>(null);
-  const fittedBoundsRef = useRef<L.LatLngBounds | null>(null);
+  const fittedViewRef = useRef<{ center: L.LatLng; zoom: number } | null>(null);
   const [status, setStatus] = useState("Loading boundary...");
   const [boundary, setBoundary] = useState<GeoJSON.FeatureCollection<GeoJSON.Geometry> | null>(null);
   const [isGeneratingStreetView, setIsGeneratingStreetView] = useState(false);
@@ -54,6 +54,7 @@ export function MapPanel({ profile }: MapPanelProps) {
     setBoundary(null);
     setStatus("Loading boundary...");
     setShowRecenter(false);
+    fittedViewRef.current = null;
 
     void (async () => {
       const nextBoundary = await fetchBoundary(profile);
@@ -127,20 +128,22 @@ export function MapPanel({ profile }: MapPanelProps) {
     const fittedBounds = layer.getBounds();
     leafletMapRef.current = map;
     boundaryLayerRef.current = layer;
-    fittedBoundsRef.current = fittedBounds;
     map.fitBounds(fittedBounds, { padding: [20, 20] });
+    fittedViewRef.current = {
+      center: map.getCenter(),
+      zoom: map.getZoom(),
+    };
 
     const handleMoved = () => {
-      const targetBounds = fittedBoundsRef.current;
-      if (!targetBounds) {
+      const fittedView = fittedViewRef.current;
+      if (!fittedView) {
         setShowRecenter(false);
         return;
       }
 
-      const currentBounds = map.getBounds();
-      const targetContainsCurrent = targetBounds.pad(0.02).contains(currentBounds);
-      const currentContainsTarget = currentBounds.pad(0.02).contains(targetBounds);
-      setShowRecenter(!(targetContainsCurrent && currentContainsTarget));
+      const centerOffsetMeters = map.getCenter().distanceTo(fittedView.center);
+      const zoomChanged = map.getZoom() !== fittedView.zoom;
+      setShowRecenter(zoomChanged || centerOffsetMeters > 40);
     };
 
     map.on("moveend", handleMoved);
@@ -152,7 +155,7 @@ export function MapPanel({ profile }: MapPanelProps) {
       map.off("zoomend", handleMoved);
       leafletMapRef.current = null;
       boundaryLayerRef.current = null;
-      fittedBoundsRef.current = null;
+      fittedViewRef.current = null;
       map.remove();
     };
   }, [boundary, isDarkMode]);
@@ -183,8 +186,11 @@ export function MapPanel({ profile }: MapPanelProps) {
       return;
     }
     const fittedBounds = layer.getBounds();
-    fittedBoundsRef.current = fittedBounds;
     map.fitBounds(fittedBounds, { padding: [20, 20] });
+    fittedViewRef.current = {
+      center: map.getCenter(),
+      zoom: map.getZoom(),
+    };
     setShowRecenter(false);
   }
 

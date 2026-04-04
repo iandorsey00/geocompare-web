@@ -1,4 +1,5 @@
 import { type FormEvent, useState } from "react";
+import { CircleXIcon } from "./CircleXIcon";
 import { SectionCard } from "./SectionCard";
 
 type SearchPanelProps = {
@@ -49,7 +50,7 @@ export function SearchPanel({ onSearch, isLoading, compact = false }: SearchPane
                 onClick={() => setQuery("")}
                 type="button"
               >
-                X
+                <CircleXIcon />
               </button>
             ) : null}
           </div>
