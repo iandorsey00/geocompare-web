@@ -74,7 +74,6 @@ export default defineConfig(({ mode }) => {
               target: proxyTarget,
               changeOrigin: true,
               secure: true,
-              rewrite: (path) => path.replace(/^\/api/, ""),
               headers: proxyAuth ? { Authorization: proxyAuth } : undefined,
             },
             "/georesolve-api": {

@@ -20,11 +20,10 @@ export function MapPanel({ profile }: MapPanelProps) {
   const mapRef = useRef<HTMLDivElement | null>(null);
   const leafletMapRef = useRef<L.Map | null>(null);
   const boundaryLayerRef = useRef<L.GeoJSON | null>(null);
-  const fittedViewRef = useRef<{ center: L.LatLng; zoom: number } | null>(null);
+  const recenterControlRef = useRef<L.Control | null>(null);
   const [status, setStatus] = useState("Loading boundary...");
   const [boundary, setBoundary] = useState<GeoJSON.FeatureCollection<GeoJSON.Geometry> | null>(null);
   const [isGeneratingStreetView, setIsGeneratingStreetView] = useState(false);
-  const [showRecenter, setShowRecenter] = useState(false);
   const [googleHref, setGoogleHref] = useState(() => googleMapsUrl(profile));
   const [streetViewHref, setStreetViewHref] = useState<string | null>(null);
   const [showStreetViewAdvanced, setShowStreetViewAdvanced] = useState(false);
@@ -53,8 +52,6 @@ export function MapPanel({ profile }: MapPanelProps) {
     let cancelled = false;
     setBoundary(null);
     setStatus("Loading boundary...");
-    setShowRecenter(false);
-    fittedViewRef.current = null;
 
     void (async () => {
       const nextBoundary = await fetchBoundary(profile);
@@ -129,33 +126,47 @@ export function MapPanel({ profile }: MapPanelProps) {
     leafletMapRef.current = map;
     boundaryLayerRef.current = layer;
     map.fitBounds(fittedBounds, { padding: [20, 20] });
-    fittedViewRef.current = {
-      center: map.getCenter(),
-      zoom: map.getZoom(),
-    };
 
-    const handleMoved = () => {
-      const fittedView = fittedViewRef.current;
-      if (!fittedView) {
-        setShowRecenter(false);
-        return;
-      }
+    const RecenterControl = L.Control.extend({
+      options: {
+        position: "topleft" as L.ControlPosition,
+      },
+      onAdd() {
+        const container = L.DomUtil.create("div", "leaflet-bar leaflet-control map-recenter-control");
+        const button = L.DomUtil.create("button", "map-recenter-control-button", container);
+        button.type = "button";
+        button.setAttribute("aria-label", "Recenter map");
+        button.setAttribute("title", "Recenter map");
+        button.innerHTML =
+          '<svg aria-hidden="true" height="16" viewBox="0 0 24 24" width="16"><circle cx="12" cy="12" fill="none" r="6" stroke="currentColor" stroke-width="1.8"></circle><path d="M12 3v3M12 18v3M3 12h3M18 12h3" stroke="currentColor" stroke-linecap="round" stroke-width="1.8"></path></svg>';
 
-      const centerOffsetMeters = map.getCenter().distanceTo(fittedView.center);
-      const zoomChanged = map.getZoom() !== fittedView.zoom;
-      setShowRecenter(zoomChanged || centerOffsetMeters > 40);
-    };
+        L.DomEvent.disableClickPropagation(container);
+        L.DomEvent.disableScrollPropagation(container);
+        L.DomEvent.on(button, "click", (event) => {
+          L.DomEvent.stop(event);
+          const currentMap = leafletMapRef.current;
+          const currentLayer = boundaryLayerRef.current;
+          if (!currentMap || !currentLayer) {
+            return;
+          }
+          currentMap.fitBounds(currentLayer.getBounds(), { padding: [20, 20] });
+        });
 
-    map.on("moveend", handleMoved);
-    map.on("zoomend", handleMoved);
-    handleMoved();
+        return container;
+      },
+    });
+
+    const recenterControl = new RecenterControl();
+    recenterControl.addTo(map);
+    recenterControlRef.current = recenterControl;
 
     return () => {
-      map.off("moveend", handleMoved);
-      map.off("zoomend", handleMoved);
+      if (recenterControlRef.current) {
+        recenterControlRef.current.remove();
+        recenterControlRef.current = null;
+      }
       leafletMapRef.current = null;
       boundaryLayerRef.current = null;
-      fittedViewRef.current = null;
       map.remove();
     };
   }, [boundary, isDarkMode]);
@@ -178,22 +189,6 @@ export function MapPanel({ profile }: MapPanelProps) {
       setIsGeneratingStreetView(false);
     }
   }
-
-  function recenterMap() {
-    const map = leafletMapRef.current;
-    const layer = boundaryLayerRef.current;
-    if (!map || !layer) {
-      return;
-    }
-    const fittedBounds = layer.getBounds();
-    map.fitBounds(fittedBounds, { padding: [20, 20] });
-    fittedViewRef.current = {
-      center: map.getCenter(),
-      zoom: map.getZoom(),
-    };
-    setShowRecenter(false);
-  }
-
   return (
     <SectionCard
       eyebrow="Map"
@@ -261,11 +256,6 @@ export function MapPanel({ profile }: MapPanelProps) {
       {boundary ? (
         <div className="map-frame">
           <div className={`map-canvas${isDarkMode ? " is-dark" : ""}`} ref={mapRef} />
-          {showRecenter ? (
-            <button className="map-recenter-button" onClick={recenterMap} type="button">
-              Recenter
-            </button>
-          ) : null}
         </div>
       ) : null}
       {status ? (

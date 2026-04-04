@@ -1,4 +1,4 @@
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useEffect, useState } from "react";
 import { CircleXIcon } from "./CircleXIcon";
 import { SectionCard } from "./SectionCard";
 
@@ -6,13 +6,23 @@ type SearchPanelProps = {
   onSearch: (params: { q: string; n: number; includeTracts: boolean }) => Promise<void>;
   isLoading: boolean;
   compact?: boolean;
+  initialQuery?: string;
 };
 
-export function SearchPanel({ onSearch, isLoading, compact = false }: SearchPanelProps) {
-  const [query, setQuery] = useState("");
+export function SearchPanel({
+  onSearch,
+  isLoading,
+  compact = false,
+  initialQuery = "",
+}: SearchPanelProps) {
+  const [query, setQuery] = useState(initialQuery);
   const [count, setCount] = useState(10);
   const [includeTracts, setIncludeTracts] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
+
+  useEffect(() => {
+    setQuery(initialQuery);
+  }, [initialQuery]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

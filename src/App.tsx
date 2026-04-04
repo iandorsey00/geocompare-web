@@ -27,6 +27,12 @@ const defaultConfig: ApiConfig = {
 };
 
 export default function App() {
+  const initialQueryFromUrl = useMemo(() => {
+    if (typeof window === "undefined") {
+      return "";
+    }
+    return new URLSearchParams(window.location.search).get("q")?.trim() ?? "";
+  }, []);
   const [surface, setSurface] = useState<"search" | "ranking" | "resolve">("search");
   const [searchView, setSearchView] = useState<"results" | "profile" | "compare">("results");
   const [config] = useState<ApiConfig>(defaultConfig);
@@ -49,6 +55,7 @@ export default function App() {
   const [feedback, setFeedback] = useState(
     DEFAULT_FEEDBACK,
   );
+  const [searchInputValue, setSearchInputValue] = useState(initialQueryFromUrl);
 
   const api = useMemo(() => new GeoCompareApi(config), [config]);
   const activeSearchController = useRef<AbortController | null>(null);
@@ -106,6 +113,18 @@ export default function App() {
 
     return () => window.clearTimeout(timeoutId);
   }, [feedback, isSearching, isLoadingNearest, isLoadingProfile]);
+
+  useEffect(() => {
+    if (!initialQueryFromUrl) {
+      return;
+    }
+
+    void handleSearch({
+      q: initialQueryFromUrl,
+      n: 10,
+      includeTracts: false,
+    });
+  }, [initialQueryFromUrl]);
 
   async function loadProfileForSelection(selection: SearchSelection) {
     const attempts = [
@@ -275,6 +294,7 @@ export default function App() {
   }
 
   async function handleSearch(params: { q: string; n: number; includeTracts: boolean }) {
+    setSearchInputValue(params.q);
     activeSearchController.current?.abort();
     const nextController = new AbortController();
     activeSearchController.current = nextController;
@@ -431,7 +451,12 @@ export default function App() {
                 GeoResolve
               </button>
             </nav>
-            <SearchPanel onSearch={handleSearch} isLoading={isSearching} compact />
+            <SearchPanel
+              initialQuery={searchInputValue}
+              onSearch={handleSearch}
+              isLoading={isSearching}
+              compact
+            />
           </section>
         ) : surface === "resolve" ? (
           <GeoResolvePanel

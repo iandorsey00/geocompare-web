@@ -723,18 +723,27 @@ tbody tr.selected {
   position: relative;
 }
 
-.map-recenter-button {
-  position: absolute;
-  right: 14px;
-  bottom: 14px;
-  min-height: 38px;
-  padding: 0 14px;
-  border-radius: 999px;
-  border: 1px solid var(--line);
-  background: var(--panel-strong);
+.map-recenter-control {
+  margin-top: 44px;
+}
+
+.map-recenter-control-button {
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  background: var(--input-bg);
   color: var(--ink);
-  box-shadow: var(--shadow);
-  backdrop-filter: blur(18px);
+  cursor: pointer;
+}
+
+.map-recenter-control-button:hover,
+.map-recenter-control-button:focus-visible {
+  background: var(--hover-soft);
+  color: var(--accent-strong);
 }
 
 .profile-subhead {
@@ -1263,6 +1272,8 @@ tbody tr.selected {
     max-width: 100%;
     text-align: right;
     font-size: 0.94rem;
+    flex-wrap: wrap;
+    white-space: normal;
   }
 
   .panel-action-links {
@@ -1272,6 +1283,11 @@ tbody tr.selected {
     gap: 8px;
     justify-items: end;
     width: 100%;
+  }
+
+  .panel-action-links .text-link {
+    white-space: normal;
+    text-align: right;
   }
 
   .street-view-advanced-options {
