@@ -1247,16 +1247,18 @@ tbody tr.selected {
   }
 
   .street-view-action-line {
-    justify-content: flex-start;
+    justify-content: flex-end;
+    width: 100%;
+    text-align: right;
   }
 
   .panel-action-links {
-    justify-items: start;
+    justify-items: end;
     width: 100%;
   }
 
   .street-view-advanced-options {
-    justify-content: flex-start;
+    justify-content: flex-end;
   }
 
   .mobile-results-list {

@@ -20,7 +20,7 @@ export function MapPanel({ profile }: MapPanelProps) {
   const mapRef = useRef<HTMLDivElement | null>(null);
   const leafletMapRef = useRef<L.Map | null>(null);
   const boundaryLayerRef = useRef<L.GeoJSON | null>(null);
-  const ignoreNextMoveRef = useRef(false);
+  const fittedBoundsRef = useRef<L.LatLngBounds | null>(null);
   const [status, setStatus] = useState("Loading boundary...");
   const [boundary, setBoundary] = useState<GeoJSON.FeatureCollection<GeoJSON.Geometry> | null>(null);
   const [isGeneratingStreetView, setIsGeneratingStreetView] = useState(false);
@@ -124,27 +124,35 @@ export function MapPanel({ profile }: MapPanelProps) {
       },
     }).addTo(map);
 
+    const fittedBounds = layer.getBounds();
     leafletMapRef.current = map;
     boundaryLayerRef.current = layer;
-    ignoreNextMoveRef.current = true;
-    map.fitBounds(layer.getBounds(), { padding: [20, 20] });
+    fittedBoundsRef.current = fittedBounds;
+    map.fitBounds(fittedBounds, { padding: [20, 20] });
 
     const handleMoved = () => {
-      if (ignoreNextMoveRef.current) {
-        ignoreNextMoveRef.current = false;
+      const targetBounds = fittedBoundsRef.current;
+      if (!targetBounds) {
+        setShowRecenter(false);
         return;
       }
-      setShowRecenter(true);
+
+      const currentBounds = map.getBounds();
+      const targetContainsCurrent = targetBounds.pad(0.02).contains(currentBounds);
+      const currentContainsTarget = currentBounds.pad(0.02).contains(targetBounds);
+      setShowRecenter(!(targetContainsCurrent && currentContainsTarget));
     };
 
     map.on("moveend", handleMoved);
     map.on("zoomend", handleMoved);
+    handleMoved();
 
     return () => {
       map.off("moveend", handleMoved);
       map.off("zoomend", handleMoved);
       leafletMapRef.current = null;
       boundaryLayerRef.current = null;
+      fittedBoundsRef.current = null;
       map.remove();
     };
   }, [boundary, isDarkMode]);
@@ -174,8 +182,9 @@ export function MapPanel({ profile }: MapPanelProps) {
     if (!map || !layer) {
       return;
     }
-    ignoreNextMoveRef.current = true;
-    map.fitBounds(layer.getBounds(), { padding: [20, 20] });
+    const fittedBounds = layer.getBounds();
+    fittedBoundsRef.current = fittedBounds;
+    map.fitBounds(fittedBounds, { padding: [20, 20] });
     setShowRecenter(false);
   }
 
