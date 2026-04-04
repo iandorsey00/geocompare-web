@@ -367,7 +367,7 @@ export function TopBottomPanel({ config, comparedGeoids, onAddCompareProfile, on
             : "Find geographies furthest from the nearest match above or below a threshold."
         }
         actions={
-          <div className="panel-action-links">
+          <div className="panel-action-links top-bottom-actions">
             <div className="action-links" aria-label="Explore modes">
               <button
                 className={`surface-link${mode === "ranking" ? " is-active" : ""}`}

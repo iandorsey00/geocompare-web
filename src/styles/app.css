@@ -303,6 +303,14 @@ button {
   justify-items: end;
 }
 
+.top-bottom-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
 .panel-action-links .text-link {
   white-space: nowrap;
 }
