@@ -316,6 +316,11 @@ button {
   text-decoration: none;
 }
 
+.street-view-inline-link {
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}
+
 .street-view-advanced-options {
   display: flex;
   flex-wrap: wrap;

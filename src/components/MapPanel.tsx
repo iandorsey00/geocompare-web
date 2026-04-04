@@ -182,7 +182,15 @@ export function MapPanel({ profile }: MapPanelProps) {
               onClick={() => setShowStreetViewAdvanced((current) => !current)}
               type="button"
             >
-              {showStreetViewAdvanced ? "(Hide filters)" : "(Filters)"}
+              {showStreetViewAdvanced ? (
+                <>
+                  (<span className="street-view-inline-link">Hide filters</span>)
+                </>
+              ) : (
+                <>
+                  (<span className="street-view-inline-link">Filters</span>)
+                </>
+              )}
             </button>
           </div>
           {showStreetViewAdvanced ? (
