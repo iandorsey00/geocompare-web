@@ -174,7 +174,7 @@ See:
 - Remoteness keeps its core controls visible and hides optional county population minimum, county density minimum, one-per-county limiting, and kilometer distance display under Advanced.
 - Remoteness numeric text inputs now accept comma separators in line with GeoCompare's numeric flag parsing.
 - Remoteness results now show population context for both the candidate and the nearest match.
-- Ranking and nearest share the same population-threshold filter presets plus a custom filter path.
+- Ranking and nearest share the same population-threshold filter presets, including `Population >= 500,000`, plus a custom filter path through a shared query-options source.
 - Mobile layouts now use intentionally simplified states for forms and results, including card-style result rows instead of compressed tables where that improves readability.
 - The footer `Sources` link shows the built-in GeoCompare source list from the backend.
 - The footer `API` link shows the current web, GeoCompare, and GeoResolve versions, the live GET-style query endpoints used by GeoCompare and GeoResolve, including GeoCompare's `/map-links`, and links to the GeoCompare Web, GeoCompare, and GeoResolve repositories.

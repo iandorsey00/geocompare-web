@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { GeoCompareApi } from "../lib/api";
 import { formatMetricValue } from "../lib/format";
 import { countiesByState, stateOptions } from "../lib/geo-options";
+import { POPULATION_FILTER_OPTIONS } from "../lib/query-options";
 import type {
   ApiConfig,
   GeographyProfile,
@@ -91,15 +92,6 @@ const GEOGRAPHY_SCOPE_OPTIONS = [
   { value: "states+", label: "States" },
   { value: "urbanareas+", label: "Urban areas" },
   { value: "cbsas+", label: "Metro areas" },
-];
-
-const FILTER_OPTIONS = [
-  { value: "population>=10000", label: "Population >= 10,000" },
-  { value: "population>=50000", label: "Population >= 50,000" },
-  { value: "population>=100000", label: "Population >= 100,000" },
-  { value: "population>=1000000", label: "Population >= 1,000,000" },
-  { value: "__custom__", label: "Custom filter" },
-  { value: "", label: "No filter" },
 ];
 
 const COUNT_OPTIONS = [10, 15, 25, 50];
@@ -586,10 +578,10 @@ export function TopBottomPanel({ config, comparedGeoids, onAddCompareProfile, on
                 }))
               }
             >
-              {FILTER_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
+                    {POPULATION_FILTER_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
               ))}
             </select>
           </label>

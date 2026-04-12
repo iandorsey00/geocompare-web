@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { formatNumber } from "../lib/format";
+import { POPULATION_FILTER_OPTIONS } from "../lib/query-options";
 import type { GeographyProfile, NearestRow } from "../lib/types";
 import { SectionCard } from "./SectionCard";
 
@@ -23,14 +24,6 @@ const SCOPE_OPTIONS = [
 ];
 
 const COUNT_OPTIONS = [5, 10, 15, 25];
-const FILTER_OPTIONS = [
-  { value: "", label: "No filter" },
-  { value: "population>=10000", label: "Population >= 10,000" },
-  { value: "population>=50000", label: "Population >= 50,000" },
-  { value: "population>=100000", label: "Population >= 100,000" },
-  { value: "population>=1000000", label: "Population >= 1,000,000" },
-  { value: "__custom__", label: "Custom filter" },
-];
 
 export function NearestPanel({ profile, rows, isLoading, statusText, onRun, onOpen }: NearestPanelProps) {
   const [scope, setScope] = useState("places+");
@@ -68,7 +61,7 @@ export function NearestPanel({ profile, rows, isLoading, statusText, onRun, onOp
         <label>
           <span>Filter</span>
           <select value={wherePreset} onChange={(event) => setWherePreset(event.target.value)}>
-            {FILTER_OPTIONS.map((option) => (
+            {POPULATION_FILTER_OPTIONS.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
               </option>
