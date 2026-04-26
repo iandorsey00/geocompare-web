@@ -1,4 +1,5 @@
-import { type FormEvent, useEffect, useState } from "react";
+import { type FormEvent, useState } from "react";
+import type { GeographySummary } from "../lib/types";
 import { CircleXIcon } from "./CircleXIcon";
 import { SectionCard } from "./SectionCard";
 
@@ -6,27 +7,28 @@ type SearchPanelProps = {
   onSearch: (params: { q: string; n: number; includeTracts: boolean }) => Promise<void>;
   isLoading: boolean;
   compact?: boolean;
-  initialQuery?: string;
+  query: string;
+  suggestions: GeographySummary[];
+  onQueryChange: (value: string) => void;
 };
 
 export function SearchPanel({
   onSearch,
   isLoading,
   compact = false,
-  initialQuery = "",
+  query,
+  suggestions,
+  onQueryChange,
 }: SearchPanelProps) {
-  const [query, setQuery] = useState(initialQuery);
   const [count, setCount] = useState(10);
   const [includeTracts, setIncludeTracts] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
-
-  useEffect(() => {
-    setQuery(initialQuery);
-  }, [initialQuery]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     await onSearch({ q: query, n: count, includeTracts });
+    setShowSuggestions(false);
   }
 
   const formClassName = compact
@@ -34,6 +36,7 @@ export function SearchPanel({
       ? "search-inline-expanded"
       : "search-inline-compact"
     : "stack";
+  const visibleSuggestions = showSuggestions && query.trim() ? suggestions : [];
 
   return (
     <SectionCard
@@ -50,18 +53,53 @@ export function SearchPanel({
               className={query ? "has-clear" : ""}
               type="text"
               value={query}
-              onChange={(event) => setQuery(event.target.value)}
+              onBlur={() => {
+                window.setTimeout(() => setShowSuggestions(false), 120);
+              }}
+              onChange={(event) => {
+                onQueryChange(event.target.value);
+                setShowSuggestions(true);
+              }}
+              onFocus={() => setShowSuggestions(true)}
               placeholder="San Francisco, Queens County, Bethesda, tract..."
             />
             {query ? (
               <button
                 aria-label="Clear search term"
                 className="clear-field"
-                onClick={() => setQuery("")}
+                onClick={() => {
+                  onQueryChange("");
+                  setShowSuggestions(false);
+                }}
                 type="button"
               >
                 <CircleXIcon />
               </button>
+            ) : null}
+            {visibleSuggestions.length > 0 ? (
+              <div
+                className="search-suggestions"
+                role="listbox"
+                aria-label="Search suggestions"
+              >
+                {visibleSuggestions.map((suggestion) => (
+                  <button
+                    className="search-suggestion"
+                    key={suggestion.geoid ?? suggestion.name}
+                    onMouseDown={(event) => event.preventDefault()}
+                    onClick={async () => {
+                      const nextQuery = suggestion.display_name || suggestion.name;
+                      onQueryChange(nextQuery);
+                      setShowSuggestions(false);
+                      await onSearch({ q: nextQuery, n: count, includeTracts });
+                    }}
+                    type="button"
+                  >
+                    <strong>{suggestion.name}</strong>
+                    <span>{suggestion.canonical_name !== suggestion.name ? suggestion.canonical_name : suggestion.display_name}</span>
+                  </button>
+                ))}
+              </div>
             ) : null}
           </div>
         </label>

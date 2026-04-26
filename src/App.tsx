@@ -84,15 +84,18 @@ export default function App() {
     DEFAULT_FEEDBACK,
   );
   const [searchInputValue, setSearchInputValue] = useState(initialQueryFromUrl);
+  const [searchSuggestions, setSearchSuggestions] = useState<GeographySummary[]>([]);
 
   const api = useMemo(() => new GeoCompareApi(config), [config]);
   const activeSearchController = useRef<AbortController | null>(null);
+  const activeSuggestionController = useRef<AbortController | null>(null);
   const currentYear = new Date().getFullYear();
   const visibleFeedback = feedback === DEFAULT_FEEDBACK ? "" : feedback;
   const visibleFeedbackTone = visibleFeedback ? feedbackTone(visibleFeedback) : "info";
 
   function handleReturnHome() {
     activeSearchController.current?.abort();
+    activeSuggestionController.current?.abort();
     setSurface("search");
     setSearchView("results");
     setSelected(null);
@@ -103,6 +106,7 @@ export default function App() {
     setNearestStatus("");
     setSimilarRows([]);
     setSimilarStatus("");
+    setSearchSuggestions([]);
     setFeedback(DEFAULT_FEEDBACK);
   }
 
@@ -155,6 +159,53 @@ export default function App() {
       includeTracts: false,
     });
   }, [initialQueryFromUrl]);
+
+  useEffect(() => {
+    const trimmedQuery = searchInputValue.trim();
+    activeSuggestionController.current?.abort();
+
+    if (trimmedQuery.length < 2) {
+      setSearchSuggestions([]);
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      const nextController = new AbortController();
+      activeSuggestionController.current = nextController;
+
+      void api
+        .search({ q: trimmedQuery, n: 8 }, nextController.signal)
+        .then((response) => {
+          if (activeSuggestionController.current !== nextController) {
+            return;
+          }
+
+          const nextSuggestions = response.results
+            .filter((row) => row.sumlevel !== "140")
+            .filter(
+              (row, index, rows) =>
+                rows.findIndex(
+                  (candidate) =>
+                    candidate.name === row.name &&
+                    candidate.sumlevel === row.sumlevel &&
+                    candidate.geoid === row.geoid,
+                ) === index,
+            )
+            .slice(0, 6);
+
+          setSearchSuggestions(nextSuggestions);
+        })
+        .catch((error) => {
+          if (error instanceof Error && error.message === "Request canceled.") {
+            return;
+          }
+
+          setSearchSuggestions([]);
+        });
+    }, 180);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [api, searchInputValue]);
 
   async function loadProfileForSelection(selection: SearchSelection) {
     const attempts = [
@@ -325,6 +376,8 @@ export default function App() {
 
   async function handleSearch(params: { q: string; n: number; includeTracts: boolean }) {
     setSearchInputValue(params.q);
+    setSearchSuggestions([]);
+    activeSuggestionController.current?.abort();
     activeSearchController.current?.abort();
     const nextController = new AbortController();
     activeSearchController.current = nextController;
@@ -491,10 +544,12 @@ export default function App() {
               </button>
             </nav>
             <SearchPanel
-              initialQuery={searchInputValue}
-              onSearch={handleSearch}
-              isLoading={isSearching}
               compact
+              isLoading={isSearching}
+              onQueryChange={setSearchInputValue}
+              onSearch={handleSearch}
+              query={searchInputValue}
+              suggestions={searchSuggestions}
             />
           </section>
         ) : surface === "resolve" ? (
