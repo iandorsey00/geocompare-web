@@ -450,6 +450,25 @@ export default function App() {
     }
   }
 
+  async function handleSuggestionSelect(summary: GeographySummary) {
+    activeSuggestionController.current?.abort();
+    activeSearchController.current?.abort();
+    setSearchInputValue(summary.display_name || summary.name);
+    setSearchSuggestions([]);
+    setSurface("search");
+    setSearchRows([summary]);
+
+    const nextSelection: SearchSelection = {
+      kind: "search",
+      item: summary,
+    };
+
+    setSelected(nextSelection);
+    setSearchView("profile");
+    setFeedback(`Opening ${summary.name}...`);
+    await loadProfileForSelection(nextSelection);
+  }
+
   async function handleToggleSources() {
     if (!showSources) {
       setShowApiInfo(false);
@@ -548,6 +567,7 @@ export default function App() {
               isLoading={isSearching}
               onQueryChange={setSearchInputValue}
               onSearch={handleSearch}
+              onSuggestionSelect={handleSuggestionSelect}
               query={searchInputValue}
               suggestions={searchSuggestions}
             />

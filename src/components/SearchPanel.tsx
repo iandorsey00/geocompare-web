@@ -5,6 +5,7 @@ import { SectionCard } from "./SectionCard";
 
 type SearchPanelProps = {
   onSearch: (params: { q: string; n: number; includeTracts: boolean }) => Promise<void>;
+  onSuggestionSelect: (item: GeographySummary) => Promise<void>;
   isLoading: boolean;
   compact?: boolean;
   query: string;
@@ -14,6 +15,7 @@ type SearchPanelProps = {
 
 export function SearchPanel({
   onSearch,
+  onSuggestionSelect,
   isLoading,
   compact = false,
   query,
@@ -91,7 +93,7 @@ export function SearchPanel({
                       const nextQuery = suggestion.display_name || suggestion.name;
                       onQueryChange(nextQuery);
                       setShowSuggestions(false);
-                      await onSearch({ q: nextQuery, n: count, includeTracts });
+                      await onSuggestionSelect(suggestion);
                     }}
                     type="button"
                   >

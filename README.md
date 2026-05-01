@@ -156,7 +156,7 @@ See:
 ## Notes
 
 - Search hides census tracts by default, but users can opt in.
-- The main search bar now shows a lightweight live suggestions dropdown powered by the existing search endpoint, while still keeping tract-heavy results out of the default suggestion list.
+- The main search bar now shows a lightweight live suggestions dropdown powered by the existing search endpoint, keeps tract-heavy results out of the default suggestion list, and opens profiles directly when a suggestion is chosen.
 - GeoResolve uses one freeform `query` input and accepts addresses, raw lat/lon, and map URLs only when coordinates are present.
 - GeoResolve current-location lookup uses the browser geolocation API and `/resolve-current-location`.
 - GeoResolve profile opening is GEOID-first.
