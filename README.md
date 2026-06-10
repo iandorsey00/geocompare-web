@@ -163,7 +163,7 @@ See:
 - Compare currently stays table-first; maps are shown on single-profile views only.
 - Profile map actions use readable place-first Google Maps queries in the web app while still using GeoCompare's backend-generated Street View links, with a local compatibility fallback if `/map-links` is not yet live.
 - Random Google Street View keeps a simple default action, shows inline `Filters`, uses arterials for primary and secondary roads, uses `Local streets` for tertiary roads and below, and keeps a persistent map-native `Recenter` control.
-- Local dev now supports `?q=` URL-prefilled search, and the Vite proxy correctly forwards `/api/*` to GeoCompare for fast UI testing without a deploy cycle.
+- The app supports shareable search and profile URLs with `?q=` and `?geoid=`, and local dev supports the same `?q=` prefill flow while the Vite proxy correctly forwards `/api/*` to GeoCompare for fast UI testing without a deploy cycle.
 - Search and GeoResolve now use a circular clear icon for query fields instead of a plain text `X`.
 - Ranking supports states, counties, places, census tracts, ZCTAs, urban areas, and metro areas.
 - Similarity supports peer-level defaults, one geography type, multiple geography types, and explicit `All` across states, counties, places, census tracts, ZCTAs, urban areas, and metro areas.

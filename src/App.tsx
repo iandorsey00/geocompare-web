@@ -55,11 +55,15 @@ function feedbackTone(message: string) {
 }
 
 export default function App() {
-  const initialQueryFromUrl = useMemo(() => {
+  const initialUrlParams = useMemo(() => {
     if (typeof window === "undefined") {
-      return "";
+      return { q: "", geoid: "" };
     }
-    return new URLSearchParams(window.location.search).get("q")?.trim() ?? "";
+    const params = new URLSearchParams(window.location.search);
+    return {
+      q: params.get("q")?.trim() ?? "",
+      geoid: params.get("geoid")?.trim() ?? "",
+    };
   }, []);
   const [surface, setSurface] = useState<"search" | "ranking" | "resolve">("search");
   const [searchView, setSearchView] = useState<"results" | "profile" | "compare">("results");
@@ -83,8 +87,10 @@ export default function App() {
   const [feedback, setFeedback] = useState(
     DEFAULT_FEEDBACK,
   );
-  const [searchInputValue, setSearchInputValue] = useState(initialQueryFromUrl);
+  const [searchInputValue, setSearchInputValue] = useState(initialUrlParams.q);
   const [searchSuggestions, setSearchSuggestions] = useState<GeographySummary[]>([]);
+  const [lastSearchQuery, setLastSearchQuery] = useState(initialUrlParams.q);
+  const [urlSyncReady, setUrlSyncReady] = useState(!initialUrlParams.geoid);
 
   const api = useMemo(() => new GeoCompareApi(config), [config]);
   const activeSearchController = useRef<AbortController | null>(null);
@@ -107,7 +113,30 @@ export default function App() {
     setSimilarRows([]);
     setSimilarStatus("");
     setSearchSuggestions([]);
+    setLastSearchQuery("");
     setFeedback(DEFAULT_FEEDBACK);
+  }
+
+  function updateShareUrl(params: { q?: string; geoid?: string }) {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const searchParams = new URLSearchParams();
+
+    if (params.geoid) {
+      searchParams.set("geoid", params.geoid);
+    } else if (params.q) {
+      searchParams.set("q", params.q);
+    }
+
+    const nextQuery = searchParams.toString();
+    const nextUrl = `${window.location.pathname}${nextQuery ? `?${nextQuery}` : ""}`;
+    const currentUrl = `${window.location.pathname}${window.location.search}`;
+
+    if (nextUrl !== currentUrl) {
+      window.history.replaceState(null, "", nextUrl);
+    }
   }
 
   useEffect(() => {
@@ -149,16 +178,80 @@ export default function App() {
   }, [feedback, isSearching, isLoadingNearest, isLoadingProfile]);
 
   useEffect(() => {
-    if (!initialQueryFromUrl) {
+    if (initialUrlParams.geoid) {
+      void (async () => {
+        setSurface("search");
+        setSearchView("profile");
+        setSelected(null);
+        setIsLoadingProfile(true);
+        setProfile(null);
+        setNearestRows([]);
+        setNearestStatus("");
+        setSimilarRows([]);
+        setSimilarStatus("");
+        try {
+          const nextProfile = await api.profileByGeoid(initialUrlParams.geoid, true);
+          setProfile(nextProfile);
+          setSearchInputValue(nextProfile.display_name || nextProfile.name);
+          setSelected({
+            kind: "search",
+            item: {
+              name: nextProfile.name,
+              display_name: nextProfile.display_name,
+              canonical_name: nextProfile.canonical_name,
+              sumlevel: nextProfile.sumlevel,
+              state: nextProfile.state,
+              geoid: nextProfile.geoid,
+              counties: nextProfile.counties,
+              counties_display: nextProfile.counties_display,
+              population: nextProfile.metrics.population ?? null,
+            },
+          });
+          setFeedback(`Opened ${nextProfile.name}.`);
+        } catch (error) {
+          setSearchView("results");
+          setFeedback(error instanceof Error ? error.message : "Profile unavailable.");
+        } finally {
+          setIsLoadingProfile(false);
+          setUrlSyncReady(true);
+        }
+      })();
+      return;
+    }
+
+    if (!initialUrlParams.q) {
       return;
     }
 
     void handleSearch({
-      q: initialQueryFromUrl,
+      q: initialUrlParams.q,
       n: 10,
       includeTracts: false,
     });
-  }, [initialQueryFromUrl]);
+  }, [api, initialUrlParams.geoid, initialUrlParams.q]);
+
+  useEffect(() => {
+    if (!urlSyncReady) {
+      return;
+    }
+
+    if (surface !== "search") {
+      updateShareUrl({});
+      return;
+    }
+
+    if (searchView === "profile" && profile?.geoid) {
+      updateShareUrl({ geoid: profile.geoid });
+      return;
+    }
+
+    if (lastSearchQuery.trim()) {
+      updateShareUrl({ q: lastSearchQuery.trim() });
+      return;
+    }
+
+    updateShareUrl({});
+  }, [lastSearchQuery, profile?.geoid, searchView, surface, urlSyncReady]);
 
   useEffect(() => {
     const trimmedQuery = searchInputValue.trim();
@@ -377,6 +470,7 @@ export default function App() {
   async function handleSearch(params: { q: string; n: number; includeTracts: boolean }) {
     setSearchInputValue(params.q);
     setSearchSuggestions([]);
+    setLastSearchQuery(params.q);
     activeSuggestionController.current?.abort();
     activeSearchController.current?.abort();
     const nextController = new AbortController();
