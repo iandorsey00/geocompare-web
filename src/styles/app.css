@@ -37,9 +37,6 @@ body {
   background: var(--bg);
   font-family: "Inter", "Helvetica Neue", Arial, sans-serif;
   color: var(--ink);
-  background-image:
-    radial-gradient(circle at top, rgba(41, 92, 170, 0.08), transparent 34%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.45), rgba(255, 255, 255, 0));
 }
 
 button,
@@ -683,7 +680,7 @@ select:focus {
 
 .primary-button {
   color: white;
-  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-strong) 100%);
+  background: var(--accent-strong);
   box-shadow: 0 10px 24px rgba(41, 92, 170, 0.18);
 }
 
@@ -1460,9 +1457,6 @@ tbody tr.selected {
   body {
     background: var(--bg);
     color: var(--ink);
-    background-image:
-      radial-gradient(circle at top, rgba(123, 167, 246, 0.12), transparent 34%),
-      linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0));
   }
 
   input,
@@ -1475,7 +1469,7 @@ tbody tr.selected {
 
   .primary-button {
     color: #0d1320;
-    background: linear-gradient(135deg, var(--accent) 0%, #9bbfff 100%);
+    background: var(--accent);
   }
 
   .secondary-button {

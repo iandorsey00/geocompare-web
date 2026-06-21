@@ -172,6 +172,7 @@ See:
 - Ranking and remoteness share the same metric dropdown, including `White, not Hispanic`, and keep the run button higher in the form for a cleaner layout.
 - The ranking/remoteness header now keeps its mode switcher and `Back to search` action aligned more cleanly, and the Vite toolchain has been upgraded to remove the prior npm audit warnings.
 - The app header no longer uses a persistent subtitle; transient loading, success, and error messages now appear in a dedicated feedback banner below the brand.
+- The visual system now uses solid app backgrounds and button fills rather than gradient treatments.
 - Remoteness keeps its core controls visible and hides optional county population minimum, county density minimum, one-per-county limiting, and kilometer distance display under Advanced.
 - Remoteness numeric text inputs now accept comma separators in line with GeoCompare's numeric flag parsing.
 - Remoteness results now show population context for both the candidate and the nearest match.
