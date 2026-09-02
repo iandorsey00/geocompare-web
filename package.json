@@ -1,13 +1,14 @@
 {
   "name": "geocompare-web",
   "private": true,
-  "version": "0.4.53",
+  "version": "0.4.54",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit -p tsconfig.app.json && tsc --noEmit -p tsconfig.node.json && vite build",
     "test": "vitest run",
     "preview": "vite preview",
+    "portfolio:capture": "node scripts/capture-portfolio.mjs",
     "deploy:droplet": "./deploy/deploy-static.sh",
     "deploy:stack": "bash ./deploy/deploy-stack.sh"
   },
@@ -26,6 +27,7 @@
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^6.0.1",
     "jsdom": "^29.0.1",
+    "playwright": "^1.62.1",
     "typescript": "^5.6.3",
     "vite": "^8.0.5",
     "vitest": "^4.1.2"

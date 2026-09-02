@@ -2,6 +2,8 @@
 
 Web frontend for exploring GeoCompare and GeoResolve.
 
+![GeoCompare profile for Mission Viejo, California, with a boundary map and demographic overview](docs/portfolio/screenshots/01-profile-overview.png)
+
 ## What it does
 
 - search geographies
@@ -87,6 +89,16 @@ npm install
 npm run dev
 npm test
 ```
+
+## Portfolio screenshot
+
+Generate the representative README and portfolio image with:
+
+```bash
+npm run portfolio:capture
+```
+
+The deterministic capture setup and screenshot manifest are documented in [`docs/portfolio/README.md`](docs/portfolio/README.md).
 
 ## Deploy
 
@@ -182,7 +194,7 @@ See:
 - The footer `API` link shows the current web, GeoCompare, and GeoResolve versions, the live GET-style query endpoints used by GeoCompare and GeoResolve, including GeoCompare's `/map-links`, and links to the GeoCompare Web, GeoCompare, and GeoResolve repositories.
 - The app now includes the current GeoCompare favicon and Apple touch icon for browser tabs and saved shortcuts.
 - The document head now includes a canonical URL plus description, robots, Open Graph, Twitter, and theme-color metadata for search and sharing previews.
-- The Vite toolchain is kept on the latest patched 8.0.x release to clear current npm audit advisories affecting local development.
+- The Vite toolchain is kept on a current patched Vite 8 release to clear known npm audit advisories affecting local development.
 - Crime rows now lead with total crimes before violent and property crimes for a more natural summary order.
 - The current bundle is larger than ideal because of map support and static option data. Lazy loading would be a good future cleanup.
 
