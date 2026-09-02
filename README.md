@@ -2,7 +2,7 @@
 
 Web frontend for exploring GeoCompare and GeoResolve.
 
-![GeoCompare profile for Mission Viejo, California, with a boundary map and demographic overview](docs/portfolio/screenshots/01-profile-overview.png)
+![GeoCompare profile for Los Angeles, California, with a city boundary map](docs/portfolio/screenshots/01-profile-overview.png)
 
 ## What it does
 

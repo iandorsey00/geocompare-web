@@ -11,48 +11,48 @@ const baseUrl = process.env.PORTFOLIO_URL?.replace(/\/+$/, "") || localUrl;
 const outputPath = resolve("docs/portfolio/screenshots/01-profile-overview.png");
 const socialPreviewPath = resolve("docs/portfolio/screenshots/social-preview.png");
 
+// Illustrative demo metrics, not a current statistical reference.
 const profile = {
-  name: "Mission Viejo city, California",
-  display_name: "Mission Viejo city, California",
-  canonical_name: "Mission Viejo city, California",
+  name: "Los Angeles city, California",
+  display_name: "Los Angeles city, California",
+  canonical_name: "Los Angeles city, California",
   sumlevel: "160",
   state: "ca",
-  geoid: "1600000US0648256",
-  counties: ["06059"],
-  counties_display: ["Orange County"],
+  geoid: "1600000US0644000",
+  counties: ["06037"],
+  counties_display: ["Los Angeles County"],
   metrics: {
-    land_area: "17.7 sqmi",
-    latitude: "33.6000",
-    longitude: "-117.6720",
-    population: "92,151",
-    population_density: "5,206.3 /sqmi",
-    median_age: "46.6",
-    under_18: "18,192",
-    population_18_to_64: "52,221",
-    age_65_plus: "21,738",
-    white_alone: "60,002",
-    white_alone_not_hispanic_or_latino: "52,860",
-    black_alone: "1,757",
-    asian_alone: "13,048",
-    other_race: "17,344",
-    hispanic_or_latino: "16,125",
-    population_25_years_and_older: "68,360",
-    bachelors_degree_or_higher: "34,727",
-    graduate_degree_or_higher: "14,236",
-    per_capita_income: "$58,091",
-    median_household_income: "$134,225",
-    poverty_universe: "91,702",
-    population_below_poverty_level: "4,846",
-    labor_force: "47,126",
-    unemployed_population: "1,923",
-    households: "34,193",
-    average_household_size: "2.7",
-    occupied_housing_units: "34,193",
-    homeowner_occupied_housing_units: "26,590",
-    median_year_structure_built: "1984",
-    median_rooms: "6.5",
-    median_value: "$1,050,500",
-    median_rent: "$2,826",
+    land_area: "469.5 sqmi",
+    latitude: "34.0522",
+    longitude: "-118.2437",
+    population: "3,820,000",
+    median_age: "37.0",
+    under_18: "725,800",
+    population_18_to_64: "2,521,200",
+    age_65_plus: "573,000",
+    white_alone: "1,260,600",
+    white_alone_not_hispanic_or_latino: "993,200",
+    black_alone: "305,600",
+    asian_alone: "458,400",
+    other_race: "1,795,400",
+    hispanic_or_latino: "1,833,600",
+    population_25_years_and_older: "2,750,400",
+    bachelors_degree_or_higher: "1,045,152",
+    graduate_degree_or_higher: "412,560",
+    per_capita_income: "$43,000",
+    median_household_income: "$80,000",
+    poverty_universe: "3,800,000",
+    population_below_poverty_level: "646,000",
+    labor_force: "2,050,000",
+    unemployed_population: "123,000",
+    households: "1,450,000",
+    average_household_size: "2.6",
+    occupied_housing_units: "1,450,000",
+    homeowner_occupied_housing_units: "522,000",
+    median_year_structure_built: "1964",
+    median_rooms: "3.8",
+    median_value: "$900,000",
+    median_rent: "$1,900",
   },
 };
 
@@ -84,7 +84,7 @@ try {
 
   await mkdir(resolve("docs/portfolio/screenshots"), { recursive: true });
   const boundary = JSON.parse(
-    await readFile(resolve("docs/portfolio/fixtures/mission-viejo-boundary.geojson"), "utf8"),
+    await readFile(resolve("docs/portfolio/fixtures/los-angeles-boundary.geojson"), "utf8"),
   );
 
   browser = await chromium.launch({ headless: true });
@@ -105,8 +105,8 @@ try {
   await page.route("**/api/map-links?**", (route) =>
     route.fulfill({
       json: {
-        google_maps_url: "https://www.google.com/maps/search/?api=1&query=Mission%20Viejo%2C%20CA",
-        google_street_view_url: "https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=33.6000,-117.6720",
+        google_maps_url: "https://www.google.com/maps/search/?api=1&query=Los%20Angeles%2C%20CA",
+        google_street_view_url: "https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=34.0522,-118.2437",
       },
     }),
   );
